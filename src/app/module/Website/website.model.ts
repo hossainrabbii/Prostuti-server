@@ -12,7 +12,7 @@ const websiteSchema = new Schema<IWebsite>(
       trim: true,
     },
 
-    remakeUrl: String, // optional now
+    remakeUrl: String,
 
     mailId: {
       type: String,
@@ -33,10 +33,19 @@ const websiteSchema = new Schema<IWebsite>(
       enum: ["pending", "processing", "sent", "failed"],
       default: "pending",
     },
+    timezone: {
+      type: String,
+      default: null,
+    },
+
+    sentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export const WebsiteModel = model<IWebsite>("Website", websiteSchema);

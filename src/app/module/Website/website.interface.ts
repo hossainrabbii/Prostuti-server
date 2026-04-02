@@ -8,13 +8,14 @@ export interface IWebsite {
   remakeUrl?: string;
 
   mailId: string;
-  associateMail: string;
+  associateMail?: string;
 
   phone?: string;
   country?: string;
   city?: string;
-
+  timezone?: string;
   mailStatus?: "pending" | "processing" | "sent" | "failed";
+  sentAt?: Date;
 
   createdAt?: Date;
   updatedAt?: Date;

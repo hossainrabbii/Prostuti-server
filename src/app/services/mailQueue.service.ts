@@ -1,8 +1,9 @@
 import { sendMail } from "./sendMail.js";
 import { TemplateModel } from "../module/template/template.model.js";
 import { WebsiteModel } from "../module/Website/website.model.js";
-// NEW: import emitEvent to push live updates to frontend
 import { emitEvent } from "../utils/sseEmitter.js";
+import { getLocalTime } from "../utils/timezone.js";
+// NEW
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -29,7 +30,6 @@ export const sendBulkMails = async (
   const template = await TemplateModel.findById(selectedTemplateId);
 
   if (!template || !template.active) {
-    // NEW: notify frontend template is invalid
     emitEvent("error", { message: "Template not found or inactive" });
     console.log("Template not found or inactive");
     return;
@@ -40,7 +40,6 @@ export const sendBulkMails = async (
 
     try {
       await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "processing" });
-      // NEW: notify frontend this site is being processed
       emitEvent("status", { id, status: "processing" });
 
       const site = await WebsiteModel.findById(id);
@@ -51,8 +50,13 @@ export const sendBulkMails = async (
 
       await sendMail(site.mailId, subject, body);
 
-      await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "sent" });
-      // NEW: notify frontend mail was sent
+      // EDITED: save sentAt as local time of the website's country
+      await WebsiteModel.findByIdAndUpdate(id, {
+        mailStatus: "sent",
+        sentAt: getLocalTime(site.country),
+        timezone: site.country,
+      });
+
       emitEvent("mail_sent", {
         id,
         name: site.name,
@@ -63,7 +67,6 @@ export const sendBulkMails = async (
       console.log(`Sent to ${site.mailId}`);
     } catch (error) {
       await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "failed" });
-      // NEW: notify frontend mail failed
       emitEvent("mail_failed", {
         id,
         message: `Failed to send mail for ${id}`,
@@ -71,7 +74,6 @@ export const sendBulkMails = async (
       console.log(`Failed for ${id}`);
     }
 
-    // NEW: if not last mail, emit countdown then wait
     if (i < selectedIds.length - 1) {
       const delayMs = randomDelay();
       const delayMins = Math.round(delayMs / 60000);
@@ -86,6 +88,5 @@ export const sendBulkMails = async (
     }
   }
 
-  // NEW: all done
   emitEvent("done", { message: "All mails processed!" });
 };

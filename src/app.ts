@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import routes from "./app/routes/routes.js";
+import { globalErrorHandler } from "./app/utils/errorHandler.js";
 
 const app: Application = express();
 
@@ -14,5 +15,7 @@ app.use("/api/v1", routes);
 app.get("/", (req: Request, res: Response) => {
   res.send("Mailforge connect server side is running.");
 });
+
+app.use(globalErrorHandler);
 
 export default app;
