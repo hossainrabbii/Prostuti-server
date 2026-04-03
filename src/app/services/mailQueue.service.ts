@@ -3,11 +3,15 @@ import { TemplateModel } from "../module/template/template.model.js";
 import { WebsiteModel } from "../module/Website/website.model.js";
 import { emitEvent } from "../utils/sseEmitter.js";
 import { getLocalTime } from "../utils/timezone.js";
-// NEW
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-const randomDelay = () => Math.floor(Math.random() * (5 - 1 + 1) + 1) * 60000;
+// EDITED: properly random between 1 and 5 minutes
+const randomDelay = () => {
+  const mins = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+  console.log(`Waiting ${mins} minute(s) before next mail...`);
+  return mins * 60000;
+};
 
 function resolveTemplate(bodyHtml: any, siteData: any) {
   const variables = [...bodyHtml.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
@@ -50,7 +54,6 @@ export const sendBulkMails = async (
 
       await sendMail(site.mailId, subject, body);
 
-      // EDITED: save sentAt as local time of the website's country
       await WebsiteModel.findByIdAndUpdate(id, {
         mailStatus: "sent",
         sentAt: getLocalTime(site.country),
@@ -75,7 +78,7 @@ export const sendBulkMails = async (
     }
 
     if (i < selectedIds.length - 1) {
-      const delayMs = randomDelay();
+      const delayMs = randomDelay(); // EDITED: now truly random 1-5 mins
       const delayMins = Math.round(delayMs / 60000);
 
       emitEvent("countdown", {

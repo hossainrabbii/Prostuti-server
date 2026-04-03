@@ -7,12 +7,13 @@ const websiteSchema = new Schema<IWebsite>(
 
     currentUrl: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true,
       trim: true,
     },
 
-    remakeUrl: String,
+    remakeUrl: { type: String, required: false },
 
     mailId: {
       type: String,
@@ -22,6 +23,11 @@ const websiteSchema = new Schema<IWebsite>(
     associateMail: {
       type: String,
       required: false,
+    },
+
+    majorIssues: {
+      type: String,
+      required: true,
     },
 
     phone: String,

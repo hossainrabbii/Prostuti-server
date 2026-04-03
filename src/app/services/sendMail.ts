@@ -4,7 +4,7 @@ import appConfig from "../appConfig/index.js";
 
 export const sendMail = async (
   mailFrom: string,
-  subject: String,
+  subjectFor: string,
   body: string,
 ) => {
   // Create a test account or replace with real credentials.
@@ -22,8 +22,8 @@ export const sendMail = async (
   await transporter.sendMail({
     from: `"Hossain Rabbi" <${appConfig.enail_user as string}>`,
     to: mailFrom,
-    subject: "Quick website idea",
-    html: body
+    subject: subjectFor,
+    html: body,
   });
 
   // console.log("Message sent:", info.messageId)

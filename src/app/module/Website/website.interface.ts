@@ -4,7 +4,7 @@ export interface IWebsite {
   _id?: Types.ObjectId;
 
   name?: string;
-  currentUrl: string;
+  currentUrl?: string;
   remakeUrl?: string;
 
   mailId: string;
@@ -16,6 +16,7 @@ export interface IWebsite {
   timezone?: string;
   mailStatus?: "pending" | "processing" | "sent" | "failed";
   sentAt?: Date;
+  majorIssues: string;
 
   createdAt?: Date;
   updatedAt?: Date;

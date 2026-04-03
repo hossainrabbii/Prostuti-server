@@ -1,0 +1,73 @@
+import { sendMail } from "./sendMail.js";
+import { TemplateModel } from "../module/template/template.model.js";
+import { WebsiteModel } from "../module/Website/website.model.js";
+import { emitEvent } from "../utils/sseEmitter.js";
+import { getLocalTime } from "../utils/timezone.js";
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+// EDITED: properly random between 1 and 5 minutes
+const randomDelay = () => {
+    const mins = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+    console.log(`Waiting ${mins} minute(s) before next mail...`);
+    return mins * 60000;
+};
+function resolveTemplate(bodyHtml, siteData) {
+    const variables = [...bodyHtml.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
+    console.log("Found variables:", variables);
+    const resolved = bodyHtml.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        return siteData[key] !== undefined ? siteData[key] : "";
+    });
+    return resolved;
+}
+export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
+    const template = await TemplateModel.findById(selectedTemplateId);
+    if (!template || !template.active) {
+        emitEvent("error", { message: "Template not found or inactive" });
+        console.log("Template not found or inactive");
+        return;
+    }
+    for (let i = 0; i < selectedIds.length; i++) {
+        const id = selectedIds[i];
+        try {
+            await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "processing" });
+            emitEvent("status", { id, status: "processing" });
+            const site = await WebsiteModel.findById(id);
+            if (!site)
+                continue;
+            const subject = template.subject;
+            const body = resolveTemplate(template.bodyHtml, site);
+            await sendMail(site.mailId, subject, body);
+            await WebsiteModel.findByIdAndUpdate(id, {
+                mailStatus: "sent",
+                sentAt: getLocalTime(site.country),
+                timezone: site.country,
+            });
+            emitEvent("mail_sent", {
+                id,
+                name: site.name,
+                mail: site.mailId,
+                message: `Mail sent to ${site.name} (${site.mailId})`,
+            });
+            console.log(`Sent to ${site.mailId}`);
+        }
+        catch (error) {
+            await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "failed" });
+            emitEvent("mail_failed", {
+                id,
+                message: `Failed to send mail for ${id}`,
+            });
+            console.log(`Failed for ${id}`);
+        }
+        if (i < selectedIds.length - 1) {
+            const delayMs = randomDelay(); // EDITED: now truly random 1-5 mins
+            const delayMins = Math.round(delayMs / 60000);
+            emitEvent("countdown", {
+                delayMs,
+                delayMins,
+                message: `Next mail in ~${delayMins} minute(s)`,
+            });
+            await delay(delayMs);
+        }
+    }
+    emitEvent("done", { message: "All mails processed!" });
+};
+//# sourceMappingURL=mailQueue.service.js.map
