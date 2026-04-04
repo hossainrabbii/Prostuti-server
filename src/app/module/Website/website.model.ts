@@ -17,6 +17,7 @@ const websiteSchema = new Schema<IWebsite>(
 
     mailId: {
       type: String,
+      unique: true,
       required: true,
     },
 

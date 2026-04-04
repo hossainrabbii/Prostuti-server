@@ -1,101 +1,80 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { TemplateService } from "./template.service.js";
 
-const createTemplate = async (req: Request, res: Response) => {
-  console.log(req?.body);
-  try {
-    const result = await TemplateService.createTemplate(req.body);
-    console.log(result);
-    res.status(201).json({
-      success: true,
-      message: "Template created successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-const getAllTemplates = async (req: Request, res: Response) => {
+const getAllTemplates = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const result = await TemplateService.getAllTemplates();
-
-    res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
   }
 };
 
-const getSingleTemplate = async (req: Request, res: Response) => {
+const getSingleTemplate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const id = req.params.id as string;
-
-    const result = await TemplateService.getSingleTemplate(id);
-
-    res.status(200).json({
-      success: true,
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(404).json({
-      success: false,
-      message: error.message,
-    });
+    const result = await TemplateService.getSingleTemplate(
+      req.params.id as string,
+    );
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error); // globalErrorHandler sends error.message to frontend
   }
 };
 
-const updateTemplate = async (req: Request, res: Response) => {
-  console.log(req?.body);
+const createTemplate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const id = req.params.id as string;
-
-    const result = await TemplateService.updateTemplate(id, req.body);
-
-    res.status(200).json({
-      success: true,
-      message: "Template updated",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    const result = await TemplateService.createTemplate(req.body);
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
   }
 };
 
-const deleteTemplate = async (req: Request, res: Response) => {
+const updateTemplate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
-    const id = req.params.id as string;
+    const result = await TemplateService.updateTemplate(
+      req.params.id as string,
+      req.body,
+    );
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const result = await TemplateService.deleteTemplate(id);
-
-    res.status(200).json({
-      success: true,
-      message: "Template deleted",
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(404).json({
-      success: false,
-      message: error.message,
-    });
+const deleteTemplate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await TemplateService.deleteTemplate(req.params.id as string);
+    res.status(200).json({ success: true, message: "Template deleted" });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const TemplateController = {
-  createTemplate,
   getAllTemplates,
   getSingleTemplate,
+  createTemplate,
   updateTemplate,
   deleteTemplate,
 };

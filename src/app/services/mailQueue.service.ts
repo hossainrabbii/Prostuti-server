@@ -6,9 +6,8 @@ import { getLocalTime } from "../utils/timezone.js";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-// EDITED: properly random between 1 and 5 minutes
 const randomDelay = () => {
-  const mins = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+  const mins = Math.floor(Math.random() * 5) + 1; 
   console.log(`Waiting ${mins} minute(s) before next mail...`);
   return mins * 60000;
 };
@@ -78,7 +77,7 @@ export const sendBulkMails = async (
     }
 
     if (i < selectedIds.length - 1) {
-      const delayMs = randomDelay(); // EDITED: now truly random 1-5 mins
+      const delayMs = randomDelay(); 
       const delayMins = Math.round(delayMs / 60000);
 
       emitEvent("countdown", {

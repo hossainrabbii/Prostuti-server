@@ -4,9 +4,11 @@ import { TemplateModel } from "./template.model.js";
 
 const createTemplate = async (payload: ITemplate) => {
   const exists = await TemplateModel.findOne({ name: payload.name });
-  console.log(payload);
   if (exists) {
-    throw new Error("Template already exists");
+    return {
+      success: false,
+      message: "Template name is already exists.",
+    };
   }
 
   return TemplateModel.create(payload);
