@@ -7,8 +7,8 @@ const app: Application = express();
 
 // parsers
 app.use(express.json());
-// app.use(cors({ origin: "https://hossainrabbi.vercel.app", credentials: true }));
-app.use(cors());
+app.use(cors({ origin: "https://mailforge-bay.vercel.app", credentials: true }));
+// app.use(cors());
 app.use("/api/v1", routes);
 //
 
