@@ -7,12 +7,12 @@ import { ITokenPayload } from "./auth.interface.js";
 const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
 
-// refreshToken goes in httpOnly cookie
+// EDITED: sameSite "none" for cross-domain cookies on Vercel
 const refreshCookieOptions = {
   httpOnly: true,
   secure: true,
-  sameSite: "strict" as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  sameSite: "none" as const, // FIXED: was "strict" — blocked cross-domain
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 const generateAccessToken = (payload: ITokenPayload) =>
@@ -22,7 +22,6 @@ const generateRefreshToken = (payload: ITokenPayload) =>
   jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
 // POST /api/v1/auth/register
-// POST /api/v1/auth/register
 export const register = async (
   req: Request,
   res: Response,
@@ -30,6 +29,7 @@ export const register = async (
 ) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -45,8 +45,8 @@ export const register = async (
       });
     }
 
-    const hashedPass = await bcrypt.hash(password, 10);
-    const user = await UserModel.create({ email, password: hashedPass });
+    // FIXED: removed manual bcrypt.hash — model pre-save hook handles it
+    const user = await UserModel.create({ email, password });
 
     const payload: ITokenPayload = {
       id: user._id as string,
@@ -57,13 +57,12 @@ export const register = async (
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // NEW: set tokens on register same as login
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
     res.status(201).json({
       success: true,
       message: "Registered successfully",
-      accessToken, // frontend saves to localStorage
+      accessToken,
       data: {
         id: user._id,
         email: user.email,
@@ -116,14 +115,12 @@ export const login = async (
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // refreshToken → httpOnly cookie (JS cannot read)
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
-    // accessToken → sent in response body → frontend saves in localStorage
     res.json({
       success: true,
       message: "Login successful",
-      accessToken, // frontend saves this
+      accessToken,
       data: {
         id: user._id,
         email: user.email,
@@ -153,7 +150,6 @@ export const refresh = async (
 
     const decoded = jwt.verify(token, REFRESH_SECRET) as ITokenPayload;
 
-    // get fresh user — picks up any role changes from DB
     const user = await UserModel.findById(decoded.id);
     if (!user) {
       return res.status(401).json({
@@ -171,16 +167,19 @@ export const refresh = async (
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // rotate refreshToken — set new cookie
     res.cookie("refreshToken", refreshToken, refreshCookieOptions);
 
-    // send new accessToken to frontend
     res.json({
       success: true,
-      accessToken, // frontend updates localStorage
+      accessToken,
     });
   } catch (error) {
-    res.clearCookie("refreshToken");
+    // EDITED: use same options when clearing
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
     return res.status(401).json({
       success: false,
       message: "Session expired. Please login again.",
@@ -190,10 +189,11 @@ export const refresh = async (
 
 // POST /api/v1/auth/logout
 export const logout = (req: Request, res: Response) => {
+  // EDITED: must match same options as when cookie was set
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
+    sameSite: "none", // FIXED: was "strict"
   });
   res.json({ success: true, message: "Logged out successfully" });
 };
