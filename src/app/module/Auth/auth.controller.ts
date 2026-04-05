@@ -45,7 +45,8 @@ export const register = async (
       });
     }
 
-    const user = await UserModel.create({ email, password });
+    const hashedPass = await bcrypt.hash(password, 10);
+    const user = await UserModel.create({ email, password: hashedPass });
 
     const payload: ITokenPayload = {
       id: user._id as string,
