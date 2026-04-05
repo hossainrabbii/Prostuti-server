@@ -7,10 +7,12 @@ import { ITokenPayload } from "./auth.interface.js";
 const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
 const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
 
-const cookieOptions = {
+// refreshToken goes in httpOnly cookie
+const refreshCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "strict" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
 const generateAccessToken = (payload: ITokenPayload) =>
@@ -19,27 +21,15 @@ const generateAccessToken = (payload: ITokenPayload) =>
 const generateRefreshToken = (payload: ITokenPayload) =>
   jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-const setTokenCookies = (res: Response, payload: ITokenPayload) => {
-  res.cookie("accessToken", generateAccessToken(payload), {
-    ...cookieOptions,
-    maxAge: 15 * 60 * 1000,
-  });
-  res.cookie("refreshToken", generateRefreshToken(payload), {
-    ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-};
-
+// POST /api/v1/auth/register
 // POST /api/v1/auth/register
 export const register = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  console.log(req.body);
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -55,14 +45,24 @@ export const register = async (
       });
     }
 
-    const hashedPass = bcrypt.hashSync(password, 10);
+    const user = await UserModel.create({ email, password });
 
-    const user = await UserModel.create({ email, password: hashedPass });
+    const payload: ITokenPayload = {
+      id: user._id as string,
+      email: user.email,
+      role: user.role,
+    };
 
-    // NEW: never send password in response
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    // NEW: set tokens on register same as login
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
     res.status(201).json({
       success: true,
       message: "Registered successfully",
+      accessToken, // frontend saves to localStorage
       data: {
         id: user._id,
         email: user.email,
@@ -90,7 +90,6 @@ export const login = async (
       });
     }
 
-    // NEW: explicitly select password only here for comparison
     const user = await UserModel.findOne({ email }).select("+password");
     if (!user) {
       return res.status(401).json({
@@ -98,8 +97,8 @@ export const login = async (
         message: "Invalid credentials",
       });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
 
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -113,12 +112,17 @@ export const login = async (
       role: user.role,
     };
 
-    setTokenCookies(res, payload);
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
-    // NEW: never send password in response
+    // refreshToken → httpOnly cookie (JS cannot read)
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
+    // accessToken → sent in response body → frontend saves in localStorage
     res.json({
       success: true,
       message: "Login successful",
+      accessToken, // frontend saves this
       data: {
         id: user._id,
         email: user.email,
@@ -148,7 +152,7 @@ export const refresh = async (
 
     const decoded = jwt.verify(token, REFRESH_SECRET) as ITokenPayload;
 
-    // password not needed here — no select("+password")
+    // get fresh user — picks up any role changes from DB
     const user = await UserModel.findById(decoded.id);
     if (!user) {
       return res.status(401).json({
@@ -163,23 +167,33 @@ export const refresh = async (
       role: user.role,
     };
 
-    setTokenCookies(res, payload);
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
-    res.json({ success: true, message: "Token refreshed" });
+    // rotate refreshToken — set new cookie
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+
+    // send new accessToken to frontend
+    res.json({
+      success: true,
+      accessToken, // frontend updates localStorage
+    });
   } catch (error) {
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("refreshToken");
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired refresh token. Please login again.",
+      message: "Session expired. Please login again.",
     });
   }
 };
 
 // POST /api/v1/auth/logout
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie("accessToken", cookieOptions);
-  res.clearCookie("refreshToken", cookieOptions);
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
   res.json({ success: true, message: "Logged out successfully" });
 };
 
@@ -190,7 +204,6 @@ export const getMe = async (
   next: NextFunction,
 ) => {
   try {
-    // password is excluded by default because of select: false in model
     const user = await UserModel.findById(req.user?.id);
     if (!user) {
       return res.status(404).json({
