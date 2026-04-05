@@ -10,7 +10,7 @@ const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
 // refreshToken goes in httpOnly cookie
 const refreshCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: true,
   sameSite: "strict" as const,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
@@ -192,7 +192,7 @@ export const refresh = async (
 export const logout = (req: Request, res: Response) => {
   res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "strict",
   });
   res.json({ success: true, message: "Logged out successfully" });
