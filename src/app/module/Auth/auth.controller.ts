@@ -29,6 +29,7 @@ export const register = async (
 ) => {
   try {
     const { email, password } = req.body;
+    console.log("Reg Backend:", email);
 
     if (!email || !password) {
       return res.status(400).json({
