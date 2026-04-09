@@ -3,9 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserModel } from "./auth.model.js";
 import { ITokenPayload } from "./auth.interface.js";
+import appConfig from "../../appConfig/index.js";
 
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
-const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
+const ACCESS_SECRET = appConfig.accessTokenSecret as string;
+const REFRESH_SECRET = appConfig.refreshTokenSecret as string;
 
 // EDITED: sameSite "none" for cross-domain cookies on Vercel
 const refreshCookieOptions = {
@@ -16,7 +17,7 @@ const refreshCookieOptions = {
 };
 
 const generateAccessToken = (payload: ITokenPayload) =>
-  jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+  jwt.sign(payload, ACCESS_SECRET, { expiresIn: "2h" });
 
 const generateRefreshToken = (payload: ITokenPayload) =>
   jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });

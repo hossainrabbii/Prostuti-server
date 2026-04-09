@@ -34,7 +34,6 @@ export const sendBulkMails = async (
 
   if (!template || !template.active) {
     emitEvent("error", { message: "Template not found or inactive" });
-    console.log("Template not found or inactive");
     return;
   }
 
@@ -66,14 +65,12 @@ export const sendBulkMails = async (
         message: `Mail sent to ${site.name} (${site.mailId})`,
       });
 
-      console.log(`Sent to ${site.mailId}`);
     } catch (error) {
       await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "failed" });
       emitEvent("mail_failed", {
         id,
         message: `Failed to send mail for ${id}`,
       });
-      console.log(`Failed for ${id}`);
     }
 
     if (i < selectedIds.length - 1) {

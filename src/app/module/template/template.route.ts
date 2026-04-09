@@ -1,5 +1,6 @@
 import express from "express";
 import { TemplateController } from "./template.controller.js";
+import { authenticate } from "../../middleware/authenticate.js";
 
 const router = express.Router();
 
@@ -7,10 +8,10 @@ router.post("/", TemplateController.createTemplate);
 
 router.get("/", TemplateController.getAllTemplates);
 
-router.get("/:id", TemplateController.getSingleTemplate);
+router.get("/:id", authenticate, TemplateController.getSingleTemplate);
 
-router.patch("/:id", TemplateController.updateTemplate);
+router.patch("/:id", authenticate, TemplateController.updateTemplate);
 
-router.delete("/:id", TemplateController.deleteTemplate);
+router.delete("/:id", authenticate, TemplateController.deleteTemplate);
 
 export const TemplateRoutes = router;

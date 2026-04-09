@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ITokenPayload } from "../module/Auth/auth.interface.js";
+import appConfig from "../appConfig/index.js";
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET as string;
+const ACCESS_SECRET = appConfig.accessTokenSecret as string;
 
 declare global {
   namespace Express {
@@ -18,7 +19,8 @@ export const authenticate = (
   next: NextFunction,
 ) => {
   const token = req.cookies?.accessToken;
-
+  // if (token) console.log(token);
+  // console.log(req.cookies);
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -26,9 +28,14 @@ export const authenticate = (
     });
   }
 
+
   try {
     const decoded = jwt.verify(token, ACCESS_SECRET) as ITokenPayload;
+
+    console.log(decoded);
     req.user = decoded;
+    console.log(req.user);
+
     next();
   } catch (error) {
     return res.status(401).json({

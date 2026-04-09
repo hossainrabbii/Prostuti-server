@@ -26,6 +26,8 @@ const getAllWebsites = async (
 ) => {
   try {
     const result = await WebsiteService.getAllWebsites();
+
+    console.log(result);
     res.status(200).json({
       success: true,
       data: result,
@@ -49,7 +51,7 @@ const getSingleWebsite = async (
       data: result,
     });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
 
@@ -67,7 +69,7 @@ const updateWebsite = async (
       data: result,
     });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
 

@@ -6,12 +6,12 @@ const router = Router();
 
 router.post("/", WebsiteController.createWebsite);
 
-router.get("/", WebsiteController.getAllWebsites);
+router.get("/", authenticate, WebsiteController.getAllWebsites);
 
-router.get("/:id", WebsiteController.getSingleWebsite);
+router.get("/:id", authenticate, WebsiteController.getSingleWebsite);
 
-router.patch("/:id", WebsiteController.updateWebsite);
+router.patch("/:id", authenticate, WebsiteController.updateWebsite);
 
-router.delete("/:id", WebsiteController.deleteWebsite);
+router.delete("/:id", authenticate, WebsiteController.deleteWebsite);
 
 export const WebsiteRoutes = router;
