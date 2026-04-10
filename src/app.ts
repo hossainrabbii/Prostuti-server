@@ -1,17 +1,34 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
-import cookieParser from "cookie-parser"; // NEW
+import cookieParser from "cookie-parser";
 import routes from "./app/routes/routes.js";
 import { globalErrorHandler } from "./app/utils/errorHandler.js";
 
 const app: Application = express();
 
 app.use(express.json());
-app.use(cookieParser()); // NEW: must be before routes
+app.use(cookieParser());
+
+// NEW: handle preflight first
+app.options("*", cors({
+  origin: [
+    "https://mailforge-bay.vercel.app",
+    "http://localhost:3000",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
 app.use(
   cors({
-    origin: ["https://mailforge-bay.vercel.app", "http://localhost:3000"],
+    origin: [
+      "https://mailforge-bay.vercel.app",
+      "http://localhost:3000",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 

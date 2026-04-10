@@ -82,6 +82,7 @@ export const login = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log(req.body);
   try {
     const { email, password } = req.body;
 
