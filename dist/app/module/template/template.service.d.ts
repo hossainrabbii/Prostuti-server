@@ -1,12 +1,15 @@
 import { Types } from "mongoose";
 import { ITemplate } from "./template.interface.js";
 export declare const TemplateService: {
-    createTemplate: (payload: ITemplate) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    createTemplate: (payload: ITemplate) => Promise<(import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
+    }) | {
+        success: boolean;
+        message: string;
     }>;
     getAllTemplates: () => Promise<(import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;

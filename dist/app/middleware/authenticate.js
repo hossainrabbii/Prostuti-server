@@ -1,7 +1,10 @@
 import jwt from "jsonwebtoken";
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+import appConfig from "../appConfig/index.js";
+const ACCESS_SECRET = appConfig.accessTokenSecret;
 export const authenticate = (req, res, next) => {
     const token = req.cookies?.accessToken;
+    // if (token) console.log(token);
+    // console.log(req.cookies);
     if (!token) {
         return res.status(401).json({
             success: false,
@@ -10,7 +13,9 @@ export const authenticate = (req, res, next) => {
     }
     try {
         const decoded = jwt.verify(token, ACCESS_SECRET);
+        console.log(decoded);
         req.user = decoded;
+        console.log(req.user);
         next();
     }
     catch (error) {

@@ -11,6 +11,7 @@ const websiteSchema = new Schema({
     remakeUrl: { type: String, required: false },
     mailId: {
         type: String,
+        unique: true,
         required: true,
     },
     associateMail: {

@@ -16,6 +16,7 @@ export const createWebsite = async (req, res, next) => {
 const getAllWebsites = async (_req, res, next) => {
     try {
         const result = await WebsiteService.getAllWebsites();
+        console.log(result);
         res.status(200).json({
             success: true,
             data: result,

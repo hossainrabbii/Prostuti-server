@@ -4,9 +4,8 @@ import { WebsiteModel } from "../module/Website/website.model.js";
 import { emitEvent } from "../utils/sseEmitter.js";
 import { getLocalTime } from "../utils/timezone.js";
 const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-// EDITED: properly random between 1 and 5 minutes
 const randomDelay = () => {
-    const mins = Math.floor(Math.random() * 5) + 1; // 1, 2, 3, 4, or 5
+    const mins = Math.floor(Math.random() * 5) + 1;
     console.log(`Waiting ${mins} minute(s) before next mail...`);
     return mins * 60000;
 };
@@ -22,7 +21,6 @@ export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
     const template = await TemplateModel.findById(selectedTemplateId);
     if (!template || !template.active) {
         emitEvent("error", { message: "Template not found or inactive" });
-        console.log("Template not found or inactive");
         return;
     }
     for (let i = 0; i < selectedIds.length; i++) {
@@ -47,7 +45,6 @@ export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
                 mail: site.mailId,
                 message: `Mail sent to ${site.name} (${site.mailId})`,
             });
-            console.log(`Sent to ${site.mailId}`);
         }
         catch (error) {
             await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "failed" });
@@ -55,10 +52,9 @@ export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
                 id,
                 message: `Failed to send mail for ${id}`,
             });
-            console.log(`Failed for ${id}`);
         }
         if (i < selectedIds.length - 1) {
-            const delayMs = randomDelay(); // EDITED: now truly random 1-5 mins
+            const delayMs = randomDelay();
             const delayMins = Math.round(delayMs / 60000);
             emitEvent("countdown", {
                 delayMs,

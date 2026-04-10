@@ -1,30 +1,23 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserModel } from "./auth.model.js";
-const ACCESS_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_SECRET = process.env.REFRESH_TOKEN_SECRET;
-const cookieOptions = {
+import appConfig from "../../appConfig/index.js";
+const ACCESS_SECRET = appConfig.accessTokenSecret;
+const REFRESH_SECRET = appConfig.refreshTokenSecret;
+// EDITED: sameSite "none" for cross-domain cookies on Vercel
+const refreshCookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none", // FIXED: was "strict" — blocked cross-domain
+    maxAge: 7 * 24 * 60 * 60 * 1000,
 };
-const generateAccessToken = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+const generateAccessToken = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: "2h" });
 const generateRefreshToken = (payload) => jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
-const setTokenCookies = (res, payload) => {
-    res.cookie("accessToken", generateAccessToken(payload), {
-        ...cookieOptions,
-        maxAge: 15 * 60 * 1000,
-    });
-    res.cookie("refreshToken", generateRefreshToken(payload), {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-};
 // POST /api/v1/auth/register
 export const register = async (req, res, next) => {
-    console.log(req.body);
     try {
         const { email, password } = req.body;
+        console.log("Reg Backend:", email);
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -38,12 +31,20 @@ export const register = async (req, res, next) => {
                 message: "Email already registered",
             });
         }
-        const hashedPass = bcrypt.hashSync(password, 10);
-        const user = await UserModel.create({ email, password: hashedPass });
-        // NEW: never send password in response
+        // FIXED: removed manual bcrypt.hash — model pre-save hook handles it
+        const user = await UserModel.create({ email, password });
+        const payload = {
+            id: user._id,
+            email: user.email,
+            role: user.role,
+        };
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions);
         res.status(201).json({
             success: true,
             message: "Registered successfully",
+            accessToken,
             data: {
                 id: user._id,
                 email: user.email,
@@ -57,6 +58,7 @@ export const register = async (req, res, next) => {
 };
 // POST /api/v1/auth/login
 export const login = async (req, res, next) => {
+    console.log(req.body);
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -65,7 +67,6 @@ export const login = async (req, res, next) => {
                 message: "Email and password are required",
             });
         }
-        // NEW: explicitly select password only here for comparison
         const user = await UserModel.findOne({ email }).select("+password");
         if (!user) {
             return res.status(401).json({
@@ -85,11 +86,13 @@ export const login = async (req, res, next) => {
             email: user.email,
             role: user.role,
         };
-        setTokenCookies(res, payload);
-        // NEW: never send password in response
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions);
         res.json({
             success: true,
             message: "Login successful",
+            accessToken,
             data: {
                 id: user._id,
                 email: user.email,
@@ -112,7 +115,6 @@ export const refresh = async (req, res, next) => {
             });
         }
         const decoded = jwt.verify(token, REFRESH_SECRET);
-        // password not needed here — no select("+password")
         const user = await UserModel.findById(decoded.id);
         if (!user) {
             return res.status(401).json({
@@ -125,28 +127,40 @@ export const refresh = async (req, res, next) => {
             email: user.email,
             role: user.role,
         };
-        setTokenCookies(res, payload);
-        res.json({ success: true, message: "Token refreshed" });
+        const accessToken = generateAccessToken(payload);
+        const refreshToken = generateRefreshToken(payload);
+        res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+        res.json({
+            success: true,
+            accessToken,
+        });
     }
     catch (error) {
-        res.clearCookie("accessToken", cookieOptions);
-        res.clearCookie("refreshToken", cookieOptions);
+        // EDITED: use same options when clearing
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        });
         return res.status(401).json({
             success: false,
-            message: "Invalid or expired refresh token. Please login again.",
+            message: "Session expired. Please login again.",
         });
     }
 };
 // POST /api/v1/auth/logout
 export const logout = (req, res) => {
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    // EDITED: must match same options as when cookie was set
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none", // FIXED: was "strict"
+    });
     res.json({ success: true, message: "Logged out successfully" });
 };
 // GET /api/v1/auth/me
 export const getMe = async (req, res, next) => {
     try {
-        // password is excluded by default because of select: false in model
         const user = await UserModel.findById(req.user?.id);
         if (!user) {
             return res.status(404).json({
