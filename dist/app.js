@@ -15,9 +15,8 @@ const corsOptions = {
 };
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(corsOptions));
-// FIXED: was app.options("*") — * breaks path-to-regexp on Vercel
-app.options("/(.*)", cors(corsOptions));
+app.use(cors(corsOptions)); // this already handles OPTIONS preflight automatically
+// REMOVED: app.options("*") and app.options("/(.*)")  — both crash path-to-regexp
 app.use("/api/v1", routes);
 app.get("/", (req, res) => {
     res.send("Mailforge connect server side is running.");
