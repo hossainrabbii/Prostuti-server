@@ -8,7 +8,7 @@ const app: Application = express();
 
 const corsOptions = {
   origin: [
-    "https://mailforge-bay.vercel.app",
+    "https://mailforgee.vercel.app",
     "http://localhost:3000",
   ],
   credentials: true,

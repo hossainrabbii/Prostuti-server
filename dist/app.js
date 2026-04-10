@@ -6,7 +6,7 @@ import { globalErrorHandler } from "./app/utils/errorHandler.js";
 const app = express();
 const corsOptions = {
     origin: [
-        "https://mailforge-bay.vercel.app",
+        "https://mailforgee.vercel.app",
         "http://localhost:3000",
     ],
     credentials: true,
