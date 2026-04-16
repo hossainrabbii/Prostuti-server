@@ -7,10 +7,7 @@ import { globalErrorHandler } from "./app/utils/errorHandler.js";
 const app: Application = express();
 
 const corsOptions = {
-  origin: [
-    "https://mailforgee.vercel.app",
-    "http://localhost:3000",
-  ],
+  origin: ["https://mailforgee.vercel.app", "http://localhost:3000"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -29,5 +26,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use(globalErrorHandler);
+
+
 
 export default app;
