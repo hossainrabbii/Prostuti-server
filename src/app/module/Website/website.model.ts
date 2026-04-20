@@ -7,10 +7,8 @@ const websiteSchema = new Schema<IWebsite>(
 
     currentUrl: {
       type: String,
-      required: false,
       unique: true,
-      sparse: true,
-      trim: true,
+      sparse: true
     },
 
     remakeUrl: { type: String, required: false },
