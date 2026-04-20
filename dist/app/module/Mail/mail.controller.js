@@ -8,7 +8,7 @@ export const sendMails = async (req, res) => {
         if (!selectedIds?.length || !selectedTemplateId) {
             return res.status(400).json({
                 success: false,
-                message: "websiteIds & templateId required",
+                message: "Email add & templateId required.",
             });
         }
         // reset status
@@ -17,7 +17,7 @@ export const sendMails = async (req, res) => {
         sendBulkMails(selectedIds, selectedTemplateId);
         res.json({
             success: true,
-            message: "Mail sending started",
+            message: "Mail sending started. Check events for live updates.",
         });
     }
     catch (error) {
@@ -27,14 +27,12 @@ export const sendMails = async (req, res) => {
         });
     }
 };
-// NEW: SSE endpoint — frontend connects here to receive live events
 export const mailEvents = (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
     addClient(res);
-    // remove client when browser disconnects
     req.on("close", () => removeClient(res));
 };
 //# sourceMappingURL=mail.controller.js.map

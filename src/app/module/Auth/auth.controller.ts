@@ -12,7 +12,7 @@ const REFRESH_SECRET = appConfig.refreshTokenSecret as string;
 const refreshCookieOptions = {
   httpOnly: true,
   secure: true,
-  sameSite: "none" as const, // FIXED: was "strict" — blocked cross-domain
+  sameSite: "none" as const, 
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -22,7 +22,6 @@ const generateAccessToken = (payload: ITokenPayload) =>
 const generateRefreshToken = (payload: ITokenPayload) =>
   jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 
-// POST /api/v1/auth/register
 export const register = async (
   req: Request,
   res: Response,
@@ -47,7 +46,6 @@ export const register = async (
       });
     }
 
-    // FIXED: removed manual bcrypt.hash — model pre-save hook handles it
     const user = await UserModel.create({ email, password });
 
     const payload: ITokenPayload = {
@@ -192,11 +190,11 @@ export const refresh = async (
 
 // POST /api/v1/auth/logout
 export const logout = (req: Request, res: Response) => {
-  // EDITED: must match same options as when cookie was set
+ 
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
-    sameSite: "none", // FIXED: was "strict"
+    sameSite: "none", 
   });
   res.json({ success: true, message: "Logged out successfully" });
 };

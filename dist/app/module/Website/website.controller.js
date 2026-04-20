@@ -61,7 +61,7 @@ const deleteWebsite = async (req, res, next) => {
         });
     }
     catch (error) {
-        next(error); // EDITED: was res.status(500)
+        next(error);
     }
 };
 export const WebsiteController = {

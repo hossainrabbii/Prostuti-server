@@ -22,7 +22,7 @@ export const createWebsite = async (
 const getAllWebsites = async (
   _req: Request,
   res: Response,
-  next: NextFunction, // EDITED: added next
+  next: NextFunction, 
 ) => {
   try {
     const result = await WebsiteService.getAllWebsites();
@@ -40,7 +40,7 @@ const getAllWebsites = async (
 const getSingleWebsite = async (
   req: Request,
   res: Response,
-  next: NextFunction, // EDITED: added next
+  next: NextFunction, 
 ) => {
   try {
     const result = await WebsiteService.getSingleWebsite(
@@ -58,7 +58,7 @@ const getSingleWebsite = async (
 const updateWebsite = async (
   req: Request,
   res: Response,
-  next: NextFunction, // EDITED: added next
+  next: NextFunction, 
 ) => {
   try {
     const id = req.params.id as string;
@@ -76,7 +76,7 @@ const updateWebsite = async (
 const deleteWebsite = async (
   req: Request,
   res: Response,
-  next: NextFunction, // EDITED: added next
+  next: NextFunction,
 ) => {
   try {
     await WebsiteService.deleteWebsite(req.params.id as string);
@@ -85,7 +85,7 @@ const deleteWebsite = async (
       message: "Website deleted",
     });
   } catch (error) {
-    next(error); // EDITED: was res.status(500)
+    next(error); 
   }
 };
 

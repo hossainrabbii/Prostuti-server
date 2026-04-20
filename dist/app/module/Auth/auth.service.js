@@ -16,7 +16,6 @@ export const AuthService = {
     },
     // validate credentials and return user
     login: async ({ email, password }) => {
-        // explicitly select password for comparison
         const user = await UserModel.findOne({ email }).select("+password");
         if (!user) {
             throw new Error("Invalid credentials");
@@ -33,7 +32,7 @@ export const AuthService = {
     },
     // get user by id
     getById: async (id) => {
-        const user = await UserModel.findById(id); // password excluded by default
+        const user = await UserModel.findById(id);
         if (!user) {
             throw new Error("User not found");
         }

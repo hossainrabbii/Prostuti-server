@@ -8,12 +8,12 @@ const userSchema = new Schema<IUser>(
       required: true,
       unique: true,
       trim: true,
-      lowercase: true, // NEW: always lowercase email
+      lowercase: true, 
     },
     password: {
       type: String,
       required: true,
-      select: false, // NEW: never return password in any query
+      select: false, 
     },
     role: {
       type: String,

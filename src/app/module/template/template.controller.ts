@@ -25,7 +25,7 @@ const getSingleTemplate = async (
     );
     res.status(200).json({ success: true, data: result });
   } catch (error) {
-    next(error); // globalErrorHandler sends error.message to frontend
+    next(error); 
   }
 };
 
