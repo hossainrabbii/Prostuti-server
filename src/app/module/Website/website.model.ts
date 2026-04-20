@@ -8,7 +8,6 @@ const websiteSchema = new Schema<IWebsite>(
     currentUrl: {
       type: String,
       unique: true,
-      sparse: true
     },
 
     remakeUrl: { type: String, required: false },
