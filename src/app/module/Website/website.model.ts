@@ -6,11 +6,11 @@ const websiteSchema = new Schema<IWebsite>(
     name: String,
     currentUrl: {
       type: String,
-      required: false,
+      unique: true,
       sparse: true,
       trim: true,
+      set: (v: string) => (v === "" ? undefined : v),
     },
-
     remakeUrl: { type: String, required: false },
 
     mailId: {
