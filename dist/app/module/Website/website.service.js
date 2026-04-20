@@ -1,5 +1,6 @@
 import { WebsiteModel } from "./website.model.js";
 const createWebsite = async (payload) => {
+    console.log(payload);
     const exists = await WebsiteModel.findOne({ mailId: payload.mailId });
     if (exists) {
         throw new Error(`Mail ID "${payload.mailId}" already exists`);

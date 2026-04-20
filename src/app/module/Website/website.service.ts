@@ -2,6 +2,7 @@ import { IWebsite } from "./website.interface.js";
 import { WebsiteModel } from "./website.model.js";
 
 const createWebsite = async (payload: IWebsite) => {
+  console.log(payload);
   const exists = await WebsiteModel.findOne({ mailId: payload.mailId });
   if (exists) {
     throw new Error(`Mail ID "${payload.mailId}" already exists`);

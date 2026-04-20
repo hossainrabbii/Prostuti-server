@@ -8,7 +8,7 @@ export const createWebsite = async (
   next: NextFunction,
 ) => {
   try {
-    const website = await WebsiteModel.create(req.body);
+    const website = await WebsiteService.createWebsite(req.body);
     res.status(201).json({
       success: true,
       message: "Website created successfully",
