@@ -4,10 +4,11 @@ import { IWebsite } from "./website.interface.js";
 const websiteSchema = new Schema<IWebsite>(
   {
     name: String,
-
     currentUrl: {
       type: String,
-      unique: true,
+      required: false,
+      sparse: true,
+      trim: true,
     },
 
     remakeUrl: { type: String, required: false },
