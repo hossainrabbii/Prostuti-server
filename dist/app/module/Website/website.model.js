@@ -4,7 +4,6 @@ const websiteSchema = new Schema({
     currentUrl: {
         type: String,
         required: false,
-        unique: true,
         sparse: true,
         trim: true,
     },
