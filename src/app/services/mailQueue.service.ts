@@ -7,9 +7,9 @@ import { getLocalTime } from "../utils/timezone.js";
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 const randomDelay = () => {
-  const mins = Math.floor(Math.random() * 5) + 1; 
-  console.log(`Waiting ${mins} minute(s) before next mail...`);
-  return mins * 60000;
+  const seconds = Math.floor(Math.random() * (90 - 30 + 1)) + 30;
+  console.log(`Waiting ${seconds} seconds before next mail...`);
+  return seconds * 1000;
 };
 
 function resolveTemplate(bodyHtml: any, siteData: any) {
@@ -75,7 +75,7 @@ export const sendBulkMails = async (
 
     if (i < selectedIds.length - 1) {
       const delayMs = randomDelay(); 
-      const delayMins = Math.round(delayMs / 60000);
+      const delayMins = Math.round(delayMs / 1000);
 
       emitEvent("countdown", {
         delayMs,
