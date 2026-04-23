@@ -80,7 +80,7 @@ export const sendBulkMails = async (
       emitEvent("countdown", {
         delayMs,
         delayMins,
-        message: `Next mail in ~${delayMins} minute(s)`,
+        message: `Next mail in ~${delayMins} seconds`,
       });
 
       await delay(delayMs);

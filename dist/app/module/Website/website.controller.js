@@ -4,7 +4,7 @@ export const createWebsite = async (req, res, next) => {
         const website = await WebsiteService.createWebsite(req.body);
         res.status(201).json({
             success: true,
-            message: "Website created successfully",
+            message: "Lead added successfully.",
             data: website,
         });
     }
@@ -43,7 +43,7 @@ const updateWebsite = async (req, res, next) => {
         const result = await WebsiteService.updateWebsite(id, req.body);
         res.status(200).json({
             success: true,
-            message: "Website updated",
+            message: "Lead updated successfully.",
             data: result,
         });
     }
@@ -56,7 +56,7 @@ const deleteWebsite = async (req, res, next) => {
         await WebsiteService.deleteWebsite(req.params.id);
         res.status(200).json({
             success: true,
-            message: "Website deleted",
+            message: "Lead deleted successfully.",
         });
     }
     catch (error) {

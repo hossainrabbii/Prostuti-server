@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { WebsiteService } from "./website.service.js";
-import { WebsiteModel } from "./website.model.js";
 
 export const createWebsite = async (
   req: Request,
@@ -11,7 +10,7 @@ export const createWebsite = async (
     const website = await WebsiteService.createWebsite(req.body);
     res.status(201).json({
       success: true,
-      message: "Website created successfully",
+      message: "Lead added successfully.",
       data: website,
     });
   } catch (error) {
@@ -65,7 +64,7 @@ const updateWebsite = async (
     const result = await WebsiteService.updateWebsite(id, req.body);
     res.status(200).json({
       success: true,
-      message: "Website updated",
+      message: "Lead updated successfully.",
       data: result,
     });
   } catch (error) {
@@ -82,7 +81,7 @@ const deleteWebsite = async (
     await WebsiteService.deleteWebsite(req.params.id as string);
     res.status(200).json({
       success: true,
-      message: "Website deleted",
+      message: "Lead deleted successfully.",
     });
   } catch (error) {
     next(error); 

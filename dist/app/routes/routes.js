@@ -6,7 +6,7 @@ import { authRouter } from "../module/Auth/auth.route.js";
 const routes = Router();
 const allRoutes = [
     {
-        path: "/websites",
+        path: "/leads",
         route: WebsiteRoutes,
     },
     {
