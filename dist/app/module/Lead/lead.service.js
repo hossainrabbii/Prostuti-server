@@ -1,4 +1,14 @@
 import { LeadModel } from "./lead.model.js";
+// EDITED: all operations scoped to userId
+const getAllLeads = async (userId) => {
+    return LeadModel.find({ userId }).sort({ createdAt: -1 });
+};
+const getSingleLead = async (id, userId) => {
+    const lead = await LeadModel.findOne({ _id: id, userId });
+    if (!lead)
+        throw new Error("Lead not found");
+    return lead;
+};
 const createLead = async (payload) => {
     const exists = await LeadModel.findOne({ mailId: payload.mailId });
     if (exists) {
@@ -6,28 +16,23 @@ const createLead = async (payload) => {
     }
     return LeadModel.create(payload);
 };
-const getAllLeads = async () => {
-    const result = await LeadModel.find();
-    return result;
+const updateLead = async (id, userId, payload) => {
+    const lead = await LeadModel.findOneAndUpdate({ _id: id, userId }, // only update if owned by this user
+    payload, { new: true, runValidators: true });
+    if (!lead)
+        throw new Error("Lead not found");
+    return lead;
 };
-const getSingleLead = async (id) => {
-    const result = await LeadModel.findById(id);
-    return result;
-};
-const updateLead = async (id, payload) => {
-    const result = await LeadModel.findByIdAndUpdate(id, payload, {
-        new: true,
-    });
-    return result;
-};
-const deleteLead = async (id) => {
-    const result = await LeadModel.findByIdAndDelete(id);
-    return result;
+const deleteLead = async (id, userId) => {
+    const lead = await LeadModel.findOneAndDelete({ _id: id, userId });
+    if (!lead)
+        throw new Error("Lead not found");
+    return lead;
 };
 export const LeadService = {
-    createLead,
     getAllLeads,
     getSingleLead,
+    createLead,
     updateLead,
     deleteLead,
 };

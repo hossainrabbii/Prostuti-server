@@ -1,21 +1,27 @@
 import { LeadService } from "./lead.service.js";
 export const createLead = async (req, res, next) => {
     try {
-        const Lead = await LeadService.createLead(req.body);
+        // NEW: userId comes from JWT token via authenticate middleware
+        // req.user is set by authenticate middleware after verifying JWT
+        const payload = {
+            ...req.body,
+            userId: req.user?.id,
+        };
+        const lead = await LeadService.createLead(payload);
         res.status(201).json({
             success: true,
             message: "Lead added successfully.",
-            data: Lead,
+            data: lead,
         });
     }
     catch (error) {
         next(error);
     }
 };
-const getAllLeads = async (_req, res, next) => {
+const getAllLeads = async (req, res, next) => {
     try {
-        const result = await LeadService.getAllLeads();
-        console.log(result);
+        // NEW: only return leads belonging to this user
+        const result = await LeadService.getAllLeads(req.user?.id);
         res.status(200).json({
             success: true,
             data: result,
@@ -27,7 +33,8 @@ const getAllLeads = async (_req, res, next) => {
 };
 const getSingleLead = async (req, res, next) => {
     try {
-        const result = await LeadService.getSingleLead(req.params.id);
+        // NEW: pass userId — users can't access other users' leads
+        const result = await LeadService.getSingleLead(req.params.id, req.user?.id);
         res.status(200).json({
             success: true,
             data: result,
@@ -39,8 +46,8 @@ const getSingleLead = async (req, res, next) => {
 };
 const updateLead = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const result = await LeadService.updateLead(id, req.body);
+        const result = await LeadService.updateLead(req.params.id, req.user?.id, // NEW: verify ownership
+        req.body);
         res.status(200).json({
             success: true,
             message: "Lead updated successfully.",
@@ -53,7 +60,7 @@ const updateLead = async (req, res, next) => {
 };
 const deleteLead = async (req, res, next) => {
     try {
-        await LeadService.deleteLead(req.params.id);
+        await LeadService.deleteLead(req.params.id, req.user?.id);
         res.status(200).json({
             success: true,
             message: "Lead deleted successfully.",

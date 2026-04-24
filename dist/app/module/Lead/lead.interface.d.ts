@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 export interface ILead {
     _id?: Types.ObjectId;
+    userId: Types.ObjectId | string;
     name?: string;
     currentUrl?: string;
     remakeUrl?: string;

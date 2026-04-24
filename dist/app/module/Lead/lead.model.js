@@ -1,12 +1,17 @@
 import { Schema, model } from "mongoose";
-const LeadSchema = new Schema({
+const leadSchema = new Schema({
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
     name: String,
     currentUrl: {
         type: String,
+        required: false,
         unique: true,
         sparse: true,
         trim: true,
-        set: (v) => (v === "" ? undefined : v),
     },
     remakeUrl: { type: String, required: false },
     mailId: {
@@ -14,14 +19,8 @@ const LeadSchema = new Schema({
         unique: true,
         required: true,
     },
-    associateMail: {
-        type: String,
-        required: false,
-    },
-    majorIssues: {
-        type: String,
-        required: true,
-    },
+    associateMail: { type: String, required: false },
+    majorIssues: { type: String, required: false },
     phone: String,
     country: String,
     city: String,
@@ -30,16 +29,8 @@ const LeadSchema = new Schema({
         enum: ["pending", "processing", "sent", "failed"],
         default: "pending",
     },
-    timezone: {
-        type: String,
-        default: null,
-    },
-    sentAt: {
-        type: Date,
-        default: null,
-    },
-}, {
-    timestamps: true,
-});
-export const LeadModel = model("Lead", LeadSchema);
+    timezone: { type: String, default: null },
+    sentAt: { type: Date, default: null },
+}, { timestamps: true });
+export const LeadModel = model("Lead", leadSchema);
 //# sourceMappingURL=lead.model.js.map
