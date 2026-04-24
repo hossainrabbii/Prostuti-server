@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
-import { IWebsite } from "./website.interface.js";
+import { ILead } from "./lead.interface.js";
 
-const websiteSchema = new Schema<IWebsite>(
+const LeadSchema = new Schema<ILead>(
   {
     name: String,
     currentUrl: {
@@ -53,4 +53,4 @@ const websiteSchema = new Schema<IWebsite>(
   },
 );
 
-export const WebsiteModel = model<IWebsite>("Website", websiteSchema);
+export const LeadModel = model<ILead>("Lead", LeadSchema);

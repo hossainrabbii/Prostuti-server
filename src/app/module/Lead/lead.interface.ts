@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export interface IWebsite {
+export interface ILead {
   _id?: Types.ObjectId;
 
   name?: string;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { WebsiteRoutes } from "../module/Website/website.routes.js";
+import { LeadRoutes } from "../module/Lead/lead.routes.js";
 import { TemplateRoutes } from "../module/template/template.route.js";
 import { MailRoutes } from "../module/Mail/mail.route.js";
 import { authRouter } from "../module/Auth/auth.route.js";
@@ -8,7 +8,7 @@ const routes = Router();
 const allRoutes = [
   {
     path: "/leads",
-    route: WebsiteRoutes,
+    route: LeadRoutes,
   },
   {
     path: "/templates",

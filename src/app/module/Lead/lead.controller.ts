@@ -1,30 +1,30 @@
 import { NextFunction, Request, Response } from "express";
-import { WebsiteService } from "./website.service.js";
+import { LeadService } from "./lead.service.js";
 
-export const createWebsite = async (
+export const createLead = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    const website = await WebsiteService.createWebsite(req.body);
+    const Lead = await LeadService.createLead(req.body);
     res.status(201).json({
       success: true,
       message: "Lead added successfully.",
-      data: website,
+      data: Lead,
     });
   } catch (error) {
     next(error);
   }
 };
 
-const getAllWebsites = async (
+const getAllLeads = async (
   _req: Request,
   res: Response,
   next: NextFunction, 
 ) => {
   try {
-    const result = await WebsiteService.getAllWebsites();
+    const result = await LeadService.getAllLeads();
 
     console.log(result);
     res.status(200).json({
@@ -36,13 +36,13 @@ const getAllWebsites = async (
   }
 };
 
-const getSingleWebsite = async (
+const getSingleLead = async (
   req: Request,
   res: Response,
   next: NextFunction, 
 ) => {
   try {
-    const result = await WebsiteService.getSingleWebsite(
+    const result = await LeadService.getSingleLead(
       req.params.id as string,
     );
     res.status(200).json({
@@ -54,14 +54,14 @@ const getSingleWebsite = async (
   }
 };
 
-const updateWebsite = async (
+const updateLead = async (
   req: Request,
   res: Response,
   next: NextFunction, 
 ) => {
   try {
     const id = req.params.id as string;
-    const result = await WebsiteService.updateWebsite(id, req.body);
+    const result = await LeadService.updateLead(id, req.body);
     res.status(200).json({
       success: true,
       message: "Lead updated successfully.",
@@ -72,13 +72,13 @@ const updateWebsite = async (
   }
 };
 
-const deleteWebsite = async (
+const deleteLead = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
   try {
-    await WebsiteService.deleteWebsite(req.params.id as string);
+    await LeadService.deleteLead(req.params.id as string);
     res.status(200).json({
       success: true,
       message: "Lead deleted successfully.",
@@ -88,10 +88,10 @@ const deleteWebsite = async (
   }
 };
 
-export const WebsiteController = {
-  createWebsite,
-  getAllWebsites,
-  getSingleWebsite,
-  updateWebsite,
-  deleteWebsite,
+export const LeadController = {
+  createLead,
+  getAllLeads,
+  getSingleLead,
+  updateLead,
+  deleteLead,
 };

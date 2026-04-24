@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { sendBulkMails } from "../../services/mailQueue.service.js";
-import { WebsiteModel } from "../Website/website.model.js";
+import { LeadModel } from "../Lead/lead.model.js";
 // NEW: import SSE helpers
 import { addClient, removeClient } from "../../utils/sseEmitter.js";
 
@@ -16,7 +16,7 @@ export const sendMails = async (req: Request, res: Response) => {
     }
 
     // reset status
-    await WebsiteModel.updateMany(
+    await LeadModel.updateMany(
       { _id: { $in: selectedIds } },
       { mailStatus: "pending" },
     );

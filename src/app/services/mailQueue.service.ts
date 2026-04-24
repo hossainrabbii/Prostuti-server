@@ -1,6 +1,6 @@
 import { sendMail } from "./sendMail.js";
 import { TemplateModel } from "../module/template/template.model.js";
-import { WebsiteModel } from "../module/Website/website.model.js";
+import { LeadModel } from "../module/Lead/lead.model.js";
 import { emitEvent } from "../utils/sseEmitter.js";
 import { getLocalTime } from "../utils/timezone.js";
 
@@ -41,10 +41,10 @@ export const sendBulkMails = async (
     const id = selectedIds[i];
 
     try {
-      await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "processing" });
+      await LeadModel.findByIdAndUpdate(id, { mailStatus: "processing" });
       emitEvent("status", { id, status: "processing" });
 
-      const site = await WebsiteModel.findById(id);
+      const site = await LeadModel.findById(id);
       if (!site) continue;
 
       const subject = template.subject;
@@ -52,7 +52,7 @@ export const sendBulkMails = async (
 
       await sendMail(site.mailId, subject, body);
 
-      await WebsiteModel.findByIdAndUpdate(id, {
+      await LeadModel.findByIdAndUpdate(id, {
         mailStatus: "sent",
         sentAt: getLocalTime(site.country),
         timezone: site.country,
@@ -66,7 +66,7 @@ export const sendBulkMails = async (
       });
 
     } catch (error) {
-      await WebsiteModel.findByIdAndUpdate(id, { mailStatus: "failed" });
+      await LeadModel.findByIdAndUpdate(id, { mailStatus: "failed" });
       emitEvent("mail_failed", {
         id,
         message: `Failed to send mail for ${id}`,
