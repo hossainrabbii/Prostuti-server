@@ -3,6 +3,7 @@ export interface IUser {
   email: string;
   password: string;
   role: "user" | "admin";
+  isVerified: boolean; // NEW
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -16,4 +17,5 @@ export interface ITokenPayload {
   id: string;
   email: string;
   role: "user" | "admin";
+  // isVerified: boolean; // NEW
 }
