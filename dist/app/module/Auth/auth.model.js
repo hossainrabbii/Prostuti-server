@@ -17,6 +17,11 @@ const userSchema = new Schema({
         enum: ["user", "admin"],
         default: "user",
     },
+    // NEW
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
 }, { timestamps: true });
 export const UserModel = model("User", userSchema);
 //# sourceMappingURL=auth.model.js.map

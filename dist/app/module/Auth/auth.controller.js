@@ -1,10 +1,11 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { UserModel } from "./auth.model.js";
+import { OtpModel } from "../Otp/otp.model.js"; // NEW
 import appConfig from "../../appConfig/index.js";
+import { generateOTP, sendOTPEmail } from "../../utils/otp.js"; // NEW
 const ACCESS_SECRET = appConfig.accessTokenSecret;
 const REFRESH_SECRET = appConfig.refreshTokenSecret;
-// EDITED: sameSite "none" for cross-domain cookies on Vercel
 const refreshCookieOptions = {
     httpOnly: true,
     secure: true,
@@ -13,10 +14,10 @@ const refreshCookieOptions = {
 };
 const generateAccessToken = (payload) => jwt.sign(payload, ACCESS_SECRET, { expiresIn: "2h" });
 const generateRefreshToken = (payload) => jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+// YOUR EXISTING register — only added OTP sending + isVerified + no tokens
 export const register = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        console.log("Reg Backend:", email);
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -30,7 +31,74 @@ export const register = async (req, res, next) => {
                 message: "Email already registered",
             });
         }
-        const user = await UserModel.create({ email, password });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        // EDITED: add isVerified: false
+        const user = await UserModel.create({
+            email,
+            password: hashedPassword,
+            isVerified: false,
+        });
+        // NEW: generate OTP → save to otps collection → send email
+        const otp = generateOTP();
+        await OtpModel.create({
+            userId: user._id,
+            otp,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
+        });
+        await sendOTPEmail(email, otp);
+        // EDITED: no tokens on register — frontend redirects to verify-otp
+        res.status(201).json({
+            success: true,
+            message: "Registered successfully. Check your email for the OTP.",
+            userId: user._id, // NEW: needed for verify-otp page
+            email: user.email,
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+// NEW: POST /api/v1/auth/verify-otp
+export const verifyOTP = async (req, res, next) => {
+    try {
+        const { userId, otp } = req.body;
+        if (!userId || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: "userId and otp are required",
+            });
+        }
+        const otpDoc = await OtpModel.findOne({ userId });
+        if (!otpDoc) {
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired or not found. Please request a new one.",
+            });
+        }
+        if (otpDoc.expiresAt < new Date()) {
+            await OtpModel.deleteOne({ userId });
+            return res.status(400).json({
+                success: false,
+                message: "OTP has expired. Please request a new one.",
+            });
+        }
+        if (otpDoc.otp !== otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid OTP",
+            });
+        }
+        // mark user as verified
+        const user = await UserModel.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        // delete OTP after successful verification
+        await OtpModel.deleteOne({ userId });
+        // auto login — generate tokens
         const payload = {
             id: user._id,
             email: user.email,
@@ -39,9 +107,9 @@ export const register = async (req, res, next) => {
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
-        res.status(201).json({
+        res.json({
             success: true,
-            message: "Registered successfully",
+            message: "Account verified successfully",
             accessToken,
             data: {
                 id: user._id,
@@ -54,7 +122,48 @@ export const register = async (req, res, next) => {
         next(error);
     }
 };
-// POST /api/v1/auth/login
+// NEW: POST /api/v1/auth/resend-otp
+export const resendOTP = async (req, res, next) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "userId is required",
+            });
+        }
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        if (user.isVerified) {
+            return res.status(400).json({
+                success: false,
+                message: "Account already verified",
+            });
+        }
+        // delete old OTP + create new one
+        await OtpModel.deleteOne({ userId });
+        const otp = generateOTP();
+        await OtpModel.create({
+            userId,
+            otp,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        });
+        await sendOTPEmail(user.email, otp);
+        res.json({
+            success: true,
+            message: "New OTP sent to your email",
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+};
+// YOUR EXISTING login — only added isVerified block
 export const login = async (req, res, next) => {
     console.log(req.body);
     try {
@@ -77,6 +186,23 @@ export const login = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: "Invalid credentials",
+            });
+        }
+        // NEW: block unverified users — send fresh OTP
+        if (!user.isVerified) {
+            await OtpModel.deleteOne({ userId: user._id });
+            const otp = generateOTP();
+            await OtpModel.create({
+                userId: user._id,
+                otp,
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+            });
+            await sendOTPEmail(user.email, otp);
+            return res.status(403).json({
+                success: false,
+                message: "Please verify your email first. A new OTP has been sent.",
+                userId: user._id,
+                requiresVerification: true,
             });
         }
         const payload = {
@@ -102,7 +228,7 @@ export const login = async (req, res, next) => {
         next(error);
     }
 };
-// POST /api/v1/auth/refresh
+// YOUR EXISTING refresh — unchanged
 export const refresh = async (req, res, next) => {
     try {
         const token = req.cookies?.refreshToken;
@@ -128,13 +254,9 @@ export const refresh = async (req, res, next) => {
         const accessToken = generateAccessToken(payload);
         const refreshToken = generateRefreshToken(payload);
         res.cookie("refreshToken", refreshToken, refreshCookieOptions);
-        res.json({
-            success: true,
-            accessToken,
-        });
+        res.json({ success: true, accessToken });
     }
     catch (error) {
-        // EDITED: use same options when clearing
         res.clearCookie("refreshToken", {
             httpOnly: true,
             secure: true,
@@ -146,7 +268,7 @@ export const refresh = async (req, res, next) => {
         });
     }
 };
-// POST /api/v1/auth/logout
+// YOUR EXISTING logout — unchanged
 export const logout = (req, res) => {
     res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -155,7 +277,7 @@ export const logout = (req, res) => {
     });
     res.json({ success: true, message: "Logged out successfully" });
 };
-// GET /api/v1/auth/me
+// YOUR EXISTING getMe — unchanged
 export const getMe = async (req, res, next) => {
     try {
         const user = await UserModel.findById(req.user?.id);
