@@ -4,9 +4,9 @@ import { authenticate } from "../../middleware/authenticate.js";
 
 const router = express.Router();
 
-router.post("/", TemplateController.createTemplate);
+router.post("/", authenticate, TemplateController.createTemplate);
 
-router.get("/", TemplateController.getAllTemplates);
+router.get("/", authenticate, TemplateController.getAllTemplates);
 
 router.get("/:id", authenticate, TemplateController.getSingleTemplate);
 

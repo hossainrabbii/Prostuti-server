@@ -6,6 +6,7 @@ export const createLead = async (
   res: Response,
   next: NextFunction,
 ) => {
+  console.log('req.user in createLead',req.user);
   try {
     // NEW: userId comes from JWT token via authenticate middleware
     // req.user is set by authenticate middleware after verifying JWT

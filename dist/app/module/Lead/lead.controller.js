@@ -1,5 +1,6 @@
 import { LeadService } from "./lead.service.js";
 export const createLead = async (req, res, next) => {
+    console.log('req.user in createLead', req.user);
     try {
         // NEW: userId comes from JWT token via authenticate middleware
         // req.user is set by authenticate middleware after verifying JWT

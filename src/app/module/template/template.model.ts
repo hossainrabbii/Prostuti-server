@@ -3,11 +3,15 @@ import { ITemplate } from "./template.interface.js";
 
 const templateSchema = new Schema<ITemplate>(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     name: {
       type: String,
       required: true,
       trim: true,
-      unique: true,
     },
 
     subject: {
@@ -30,5 +34,7 @@ const templateSchema = new Schema<ITemplate>(
     timestamps: true,
   }
 );
+
+templateSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 export const TemplateModel = model<ITemplate>("Template", templateSchema);

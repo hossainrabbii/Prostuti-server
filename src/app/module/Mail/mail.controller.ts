@@ -15,9 +15,18 @@ export const sendMails = async (req: Request, res: Response) => {
       });
     }
 
-    // reset status
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized — please login",
+      });
+    }
+
+    const userId = req.user.id;
+
+    // reset status — only this user's leads
     await LeadModel.updateMany(
-      { _id: { $in: selectedIds } },
+      { _id: { $in: selectedIds }, userId },
       { mailStatus: "pending" },
     );
 

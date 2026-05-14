@@ -10,15 +10,19 @@ const getSingleLead = async (id, userId) => {
     return lead;
 };
 const createLead = async (payload) => {
-    const exists = await LeadModel.findOne({ mailId: payload.mailId });
+    const exists = await LeadModel.findOne({
+        mailId: payload.mailId,
+        userId: payload.userId,
+    });
     if (exists) {
         throw new Error(`Mail ID "${payload.mailId}" already exists`);
     }
     return LeadModel.create(payload);
 };
 const updateLead = async (id, userId, payload) => {
+    const { userId: _ignored, ...safe } = payload;
     const lead = await LeadModel.findOneAndUpdate({ _id: id, userId }, // only update if owned by this user
-    payload, { new: true, runValidators: true });
+    safe, { new: true, runValidators: true });
     if (!lead)
         throw new Error("Lead not found");
     return lead;

@@ -7,7 +7,7 @@ const getAllTemplates = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await TemplateService.getAllTemplates();
+    const result = await TemplateService.getAllTemplates(req.user?.id as string);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -22,10 +22,11 @@ const getSingleTemplate = async (
   try {
     const result = await TemplateService.getSingleTemplate(
       req.params.id as string,
+      req.user?.id as string,
     );
     res.status(200).json({ success: true, data: result });
   } catch (error) {
-    next(error); 
+    next(error);
   }
 };
 
@@ -35,7 +36,11 @@ const createTemplate = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await TemplateService.createTemplate(req.body);
+    const payload = {
+      ...req.body,
+      userId: req.user?.id,
+    };
+    const result = await TemplateService.createTemplate(payload);
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -50,6 +55,7 @@ const updateTemplate = async (
   try {
     const result = await TemplateService.updateTemplate(
       req.params.id as string,
+      req.user?.id as string,
       req.body,
     );
     res.status(200).json({ success: true, data: result });
@@ -64,7 +70,10 @@ const deleteTemplate = async (
   next: NextFunction,
 ) => {
   try {
-    await TemplateService.deleteTemplate(req.params.id as string);
+    await TemplateService.deleteTemplate(
+      req.params.id as string,
+      req.user?.id as string,
+    );
     res.status(200).json({ success: true, message: "Template deleted" });
   } catch (error) {
     next(error);

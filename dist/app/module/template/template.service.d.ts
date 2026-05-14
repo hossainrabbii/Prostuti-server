@@ -1,38 +1,35 @@
 import { Types } from "mongoose";
 import { ITemplate } from "./template.interface.js";
 export declare const TemplateService: {
-    createTemplate: (payload: ITemplate) => Promise<(import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    createTemplate: (payload: ITemplate) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
-    }) | {
-        success: boolean;
-        message: string;
     }>;
-    getAllTemplates: () => Promise<(import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    getAllTemplates: (userId: string) => Promise<(import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     })[]>;
-    getSingleTemplate: (id: string) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    getSingleTemplate: (id: string, userId: string) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    updateTemplate: (id: string, payload: Partial<ITemplate>) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    updateTemplate: (id: string, userId: string, payload: Partial<ITemplate>) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     } & {
         id: string;
     }>;
-    deleteTemplate: (id: string) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
+    deleteTemplate: (id: string, userId: string) => Promise<import("mongoose").Document<unknown, {}, ITemplate, {}, import("mongoose").DefaultSchemaOptions> & ITemplate & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
