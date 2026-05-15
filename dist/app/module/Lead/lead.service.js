@@ -14,13 +14,14 @@ const createLead = async (payload) => {
         userId: payload.userId,
         mailId: payload.mailId,
     };
-    if (payload.currentUrl) {
-        filter.currentUrl = payload.currentUrl;
+    if (filter.currentUrl = payload.currentUrl) {
+        // filter.currentUrl = payload.currentUrl;
+        throw new Error('This mailId and currentUrl already exist in your leads list.');
     }
-    const exists = await LeadModel.findOne(filter);
-    if (exists) {
-        throw new Error(`Mail ID "${payload.mailId}" already exists`);
-    }
+    // const exists = await LeadModel.findOne(filter);
+    // if (exists) {
+    //   throw new Error(`Mail ID "${payload.mailId}" already exists`);
+    // }
     return LeadModel.create(payload);
 };
 const updateLead = async (id, userId, payload) => {
