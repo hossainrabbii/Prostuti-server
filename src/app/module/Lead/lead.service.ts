@@ -13,10 +13,16 @@ const getSingleLead = async (id: string, userId: string) => {
 };
 
 const createLead = async (payload: ILead) => {
-  const exists = await LeadModel.findOne({
-    mailId: payload.mailId,
+  const filter: any = {
     userId: payload.userId,
-  });
+    mailId: payload.mailId,
+  };
+  
+  if (payload.currentUrl) {
+    filter.currentUrl = payload.currentUrl;
+  }
+  
+  const exists = await LeadModel.findOne(filter);
   if (exists) {
     throw new Error(`Mail ID "${payload.mailId}" already exists`);
   }
