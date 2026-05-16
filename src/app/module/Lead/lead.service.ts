@@ -18,8 +18,10 @@ const createLead = async (payload: ILead) => {
     mailId: payload.mailId,
   };
   
-  if (filter.currentUrl = payload.currentUrl) {
+  if (filter.currentUrl === payload.currentUrl) {
+    console.log('This mailId and currentUrl already exist in your leads list.');
     // filter.currentUrl = payload.currentUrl;
+    console.log('Throwing error', filter);
     throw new Error('This mailId and currentUrl already exist in your leads list.');
 
   }

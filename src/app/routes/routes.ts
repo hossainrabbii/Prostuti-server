@@ -2,7 +2,7 @@ import { Router } from "express";
 import { LeadRoutes } from "../module/Lead/lead.routes.js";
 import { TemplateRoutes } from "../module/template/template.route.js";
 import { MailRoutes } from "../module/Mail/mail.route.js";
-import { authRouter } from "../module/Auth/auth.route.js";
+import { authRouter } from "../module/User/user.route.js";
 
 const routes = Router();
 const allRoutes = [

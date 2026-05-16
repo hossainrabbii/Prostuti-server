@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IUser } from "./auth.interface.js";
+import { IUser } from "./user.interface.js";
 
 const userSchema = new Schema<IUser>(
   {
@@ -24,6 +24,11 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
       default: false,
+    },    
+    appPassword: {
+      type: String,
+      default: null,
+      // select: false, // never returned in queries
     },
   },
   { timestamps: true },

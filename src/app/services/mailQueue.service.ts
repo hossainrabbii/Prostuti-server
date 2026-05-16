@@ -29,6 +29,7 @@ function resolveTemplate(bodyHtml: any, siteData: any) {
 export const sendBulkMails = async (
   selectedIds: string[],
   selectedTemplateId: string,
+  userId:string
 ) => {
   const template = await TemplateModel.findById(selectedTemplateId);
 
@@ -50,7 +51,7 @@ export const sendBulkMails = async (
       const subject = template.subject;
       const body = resolveTemplate(template.bodyHtml, site);
 
-      await sendMail(site.mailId, subject, body);
+      await sendMail(site.mailId, subject, body, userId);
 
       await LeadModel.findByIdAndUpdate(id, {
         mailStatus: "sent",

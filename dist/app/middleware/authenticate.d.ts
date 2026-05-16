@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { ITokenPayload } from "../module/Auth/auth.interface.js";
+import { ITokenPayload } from "../module/User/user.interface.js";
 declare global {
     namespace Express {
         interface Request {

@@ -4,6 +4,7 @@ export interface IUser {
   password: string;
   role: "user" | "admin";
   isVerified: boolean; // NEW
+  appPassword?: string; // NEW
   createdAt?: Date;
   updatedAt?: Date;
 }

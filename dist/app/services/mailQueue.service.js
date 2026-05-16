@@ -17,7 +17,7 @@ function resolveTemplate(bodyHtml, siteData) {
     });
     return resolved;
 }
-export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
+export const sendBulkMails = async (selectedIds, selectedTemplateId, userId) => {
     const template = await TemplateModel.findById(selectedTemplateId);
     if (!template || !template.active) {
         emitEvent("error", { message: "Template not found or inactive" });
@@ -33,7 +33,7 @@ export const sendBulkMails = async (selectedIds, selectedTemplateId) => {
                 continue;
             const subject = template.subject;
             const body = resolveTemplate(template.bodyHtml, site);
-            await sendMail(site.mailId, subject, body);
+            await sendMail(site.mailId, subject, body, userId);
             await LeadModel.findByIdAndUpdate(id, {
                 mailStatus: "sent",
                 sentAt: getLocalTime(site.country),

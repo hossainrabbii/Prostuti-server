@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
-import { UserModel } from "./auth.model.js";
+import { UserModel } from "./user.model.js";
 import { OtpModel } from "../Otp/otp.model.js";
-import { ILoginPayload } from "./auth.interface.js";
+import { ILoginPayload } from "./user.interface.js";
 import { generateOTP, sendOTPEmail } from "../../utils/otp.js";
 
 export const AuthService = {

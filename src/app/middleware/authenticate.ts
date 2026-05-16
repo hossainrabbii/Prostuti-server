@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { ITokenPayload } from "../module/Auth/auth.interface.js";
+import { ITokenPayload } from "../module/User/user.interface.js";
 import appConfig from "../appConfig/index.js";
 
 const ACCESS_SECRET = appConfig.accessTokenSecret as string;

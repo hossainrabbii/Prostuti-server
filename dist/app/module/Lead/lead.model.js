@@ -9,14 +9,12 @@ const leadSchema = new Schema({
     currentUrl: {
         type: String,
         required: false,
-        unique: true,
         sparse: true,
         trim: true,
     },
     remakeUrl: { type: String, required: false },
     mailId: {
         type: String,
-        unique: true,
         required: true,
     },
     associateMail: { type: String, required: false },

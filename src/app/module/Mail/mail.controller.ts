@@ -3,6 +3,7 @@ import { sendBulkMails } from "../../services/mailQueue.service.js";
 import { LeadModel } from "../Lead/lead.model.js";
 // NEW: import SSE helpers
 import { addClient, removeClient } from "../../utils/sseEmitter.js";
+import { UserModel } from "../User/user.model.js";
 
 export const sendMails = async (req: Request, res: Response) => {
   try {
@@ -23,6 +24,10 @@ export const sendMails = async (req: Request, res: Response) => {
     }
 
     const userId = req.user.id;
+    const userData = await UserModel.findById(userId);
+    console.log('from mail controller',userId)
+    console.log('from mail controller',userData)
+
 
     // reset status — only this user's leads
     await LeadModel.updateMany(
@@ -31,7 +36,7 @@ export const sendMails = async (req: Request, res: Response) => {
     );
 
     // background process — don't await, runs in background
-    sendBulkMails(selectedIds, selectedTemplateId);
+    sendBulkMails(selectedIds, selectedTemplateId, userId);
     res.json({
       success: true,
       message: "Mail sending started. Check events for live updates.",

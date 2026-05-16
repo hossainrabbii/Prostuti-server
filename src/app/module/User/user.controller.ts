@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { UserModel } from "./auth.model.js";
+import { UserModel } from "./user.model.js";
 import { OtpModel } from "../Otp/otp.model.js"; // NEW
-import { ITokenPayload } from "./auth.interface.js";
+import { ITokenPayload } from "./user.interface.js";
 import appConfig from "../../appConfig/index.js";
 import { generateOTP, sendOTPEmail } from "../../utils/otp.js"; // NEW
-
+import nodemailer from "nodemailer";
 const ACCESS_SECRET = appConfig.accessTokenSecret as string;
 const REFRESH_SECRET = appConfig.refreshTokenSecret as string;
 
@@ -217,7 +217,6 @@ export const login = async (
   res: Response,
   next: NextFunction,
 ) => {
-  console.log(req.body);
   try {
     const { email, password } = req.body;
 
@@ -371,6 +370,86 @@ export const getMe = async (
         email: user.email,
         role: user.role,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// NEW: POST /api/v1/auth/mail-config
+export const saveMailConfig = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { appPassword } = req.body;
+    const userId = req.user?.id;
+
+    if (!appPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "App password is required",
+      });
+    }
+
+    // get user email to verify against
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // verify app password belongs to user's registered email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: user.email, // use their registered email
+        pass: appPassword,
+      },
+    });
+
+    try {
+      await transporter.verify();
+    } catch {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid app password for your email. Please check and try again.",
+      });
+    }
+
+    // save verified app password
+    await UserModel.findByIdAndUpdate(userId, { appPassword });
+
+    res.json({
+      success: true,
+      message: "App password verified and saved successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// NEW: GET /api/v1/auth/mail-config
+export const getMailConfig = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = await UserModel.findById(req.user?.id);
+    
+    res.json({
+      success: true,
+      data: {
+        email:user?.email,
+        isVerified:user?.isVerified,
+        role:user?.role,
+        appPassword:user?.appPassword,
+      }
     });
   } catch (error) {
     next(error);
