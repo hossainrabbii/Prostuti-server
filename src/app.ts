@@ -23,6 +23,7 @@ app.use("/api/v1", routes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Mailforge connect server side is running.");
+ 
 });
 
 app.use(globalErrorHandler);

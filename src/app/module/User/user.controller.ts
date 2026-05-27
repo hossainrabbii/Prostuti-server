@@ -219,7 +219,6 @@ export const login = async (
 ) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -253,7 +252,6 @@ export const login = async (
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       });
       await sendOTPEmail(user.email, otp);
-
       return res.status(403).json({
         success: false,
         message: "Please verify your email first. A new OTP has been sent.",
