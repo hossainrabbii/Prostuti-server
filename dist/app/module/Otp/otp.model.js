@@ -9,12 +9,18 @@ const otpSchema = new Schema({
         type: String,
         required: true,
     },
-    // auto delete when expiresAt is reached
+    purpose: {
+        type: String,
+        enum: ["verification", "password_reset"],
+        default: "verification",
+        required: true,
+    },
     expiresAt: {
         type: Date,
         required: true,
         index: { expires: 0 },
     },
 }, { timestamps: true });
+otpSchema.index({ userId: 1, purpose: 1 }, { unique: true });
 export const OtpModel = model("Otp", otpSchema);
 //# sourceMappingURL=otp.model.js.map

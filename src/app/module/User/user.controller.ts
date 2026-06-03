@@ -5,8 +5,26 @@ import { UserModel } from "./user.model.js";
 import { OtpModel } from "../Otp/otp.model.js"; // NEW
 import { ITokenPayload } from "./user.interface.js";
 import appConfig from "../../appConfig/index.js";
-import { generateOTP, sendOTPEmail } from "../../utils/otp.js"; // NEW
+import {
+  generateOTP,
+  sendOTPEmail,
+  sendPasswordResetEmail,
+} from "../../utils/otp.js";
+import { validatePassword } from "../../utils/password.js";
+import type { OtpPurpose } from "../Otp/otp.interface.js";
 import nodemailer from "nodemailer";
+
+const OTP_VERIFICATION: OtpPurpose = "verification";
+const OTP_PASSWORD_RESET: OtpPurpose = "password_reset";
+const OTP_TTL_MS = 10 * 60 * 1000;
+
+const verificationOtpFilter = (userId: string) => ({
+  userId,
+  $or: [{ purpose: OTP_VERIFICATION }, { purpose: { $exists: false } }],
+});
+
+const deleteVerificationOtps = (userId: string) =>
+  OtpModel.deleteMany(verificationOtpFilter(userId));
 const ACCESS_SECRET = appConfig.accessTokenSecret as string;
 const REFRESH_SECRET = appConfig.refreshTokenSecret as string;
 
@@ -39,6 +57,14 @@ export const register = async (
       });
     }
 
+    const passwordCheck = validatePassword(password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordCheck.message,
+      });
+    }
+
     const existing = await UserModel.findOne({ email });
     if (existing) {
       return res.status(409).json({
@@ -61,7 +87,8 @@ export const register = async (
     await OtpModel.create({
       userId: user._id,
       otp,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
+      purpose: OTP_VERIFICATION,
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
     });
     await sendOTPEmail(email, otp);
 
@@ -93,7 +120,7 @@ export const verifyOTP = async (
       });
     }
 
-    const otpDoc = await OtpModel.findOne({ userId });
+    const otpDoc = await OtpModel.findOne(verificationOtpFilter(String(userId)));
 
     if (!otpDoc) {
       return res.status(400).json({
@@ -103,7 +130,7 @@ export const verifyOTP = async (
     }
 
     if (otpDoc.expiresAt < new Date()) {
-      await OtpModel.deleteOne({ userId });
+      await deleteVerificationOtps(String(userId));
       return res.status(400).json({
         success: false,
         message: "OTP has expired. Please request a new one.",
@@ -132,7 +159,7 @@ export const verifyOTP = async (
     }
 
     // delete OTP after successful verification
-    await OtpModel.deleteOne({ userId });
+    await deleteVerificationOtps(String(userId));
 
     // auto login — generate tokens
     const payload: ITokenPayload = {
@@ -193,18 +220,207 @@ export const resendOTP = async (
     }
 
     // delete old OTP + create new one
-    await OtpModel.deleteOne({ userId });
+    await deleteVerificationOtps(String(userId));
     const otp = generateOTP();
     await OtpModel.create({
       userId,
       otp,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      purpose: OTP_VERIFICATION,
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
     });
     await sendOTPEmail(user.email, otp);
 
     res.json({
       success: true,
       message: "New OTP sent to your email",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/forgot-password
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await UserModel.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email",
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email first",
+        userId: user._id,
+        requiresVerification: true,
+      });
+    }
+
+    await OtpModel.deleteOne({
+      userId: user._id,
+      purpose: OTP_PASSWORD_RESET,
+    });
+
+    const otp = generateOTP();
+    await OtpModel.create({
+      userId: user._id,
+      otp,
+      purpose: OTP_PASSWORD_RESET,
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    });
+    await sendPasswordResetEmail(user.email, otp);
+
+    res.json({
+      success: true,
+      message: "Password reset code sent to your email",
+      userId: user._id,
+      email: user.email,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/reset-password
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { userId, otp, newPassword } = req.body;
+
+    if (!userId || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "userId, otp, and newPassword are required",
+      });
+    }
+
+    const passwordCheck = validatePassword(newPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordCheck.message,
+      });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const otpDoc = await OtpModel.findOne({
+      userId,
+      purpose: OTP_PASSWORD_RESET,
+    });
+
+    if (!otpDoc) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired or not found. Please request a new one.",
+      });
+    }
+
+    if (otpDoc.expiresAt < new Date()) {
+      await OtpModel.deleteOne({ userId, purpose: OTP_PASSWORD_RESET });
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired. Please request a new one.",
+      });
+    }
+
+    if (otpDoc.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await UserModel.findByIdAndUpdate(userId, { password: hashedPassword });
+    await OtpModel.deleteOne({ userId, purpose: OTP_PASSWORD_RESET });
+
+    res.json({
+      success: true,
+      message: "Password reset successfully. Please log in with your new password.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/v1/auth/resend-reset-otp
+export const resendResetOTP = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Please verify your email first",
+        userId: user._id,
+        requiresVerification: true,
+      });
+    }
+
+    await OtpModel.deleteOne({
+      userId,
+      purpose: OTP_PASSWORD_RESET,
+    });
+
+    const otp = generateOTP();
+    await OtpModel.create({
+      userId,
+      otp,
+      purpose: OTP_PASSWORD_RESET,
+      expiresAt: new Date(Date.now() + OTP_TTL_MS),
+    });
+    await sendPasswordResetEmail(user.email, otp);
+
+    res.json({
+      success: true,
+      message: "New reset code sent to your email",
     });
   } catch (error) {
     next(error);
@@ -244,12 +460,13 @@ export const login = async (
 
     // NEW: block unverified users — send fresh OTP
     if (!user.isVerified) {
-      await OtpModel.deleteOne({ userId: user._id });
+      await deleteVerificationOtps(String(user._id));
       const otp = generateOTP();
       await OtpModel.create({
         userId: user._id,
         otp,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        purpose: OTP_VERIFICATION,
+        expiresAt: new Date(Date.now() + OTP_TTL_MS),
       });
       await sendOTPEmail(user.email, otp);
       return res.status(403).json({

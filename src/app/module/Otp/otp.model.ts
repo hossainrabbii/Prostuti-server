@@ -12,7 +12,12 @@ const otpSchema = new Schema<IOtp>(
       type: String,
       required: true,
     },
-    // auto delete when expiresAt is reached
+    purpose: {
+      type: String,
+      enum: ["verification", "password_reset"],
+      default: "verification",
+      required: true,
+    },
     expiresAt: {
       type: Date,
       required: true,
@@ -21,5 +26,7 @@ const otpSchema = new Schema<IOtp>(
   },
   { timestamps: true },
 );
+
+otpSchema.index({ userId: 1, purpose: 1 }, { unique: true });
 
 export const OtpModel = model<IOtp>("Otp", otpSchema);

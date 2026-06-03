@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { UserModel } from "./user.model.js";
 import { OtpModel } from "../Otp/otp.model.js";
 import { generateOTP, sendOTPEmail } from "../../utils/otp.js";
+const OTP_VERIFICATION = "verification";
 export const AuthService = {
     // EDITED: register creates user + sends OTP, no tokens yet
     register: async (email, password) => {
@@ -19,6 +20,7 @@ export const AuthService = {
         await OtpModel.create({
             userId: user._id,
             otp,
+            purpose: OTP_VERIFICATION,
             expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
         });
         // NEW: send OTP email
@@ -30,12 +32,15 @@ export const AuthService = {
     },
     // NEW: verify OTP
     verifyOTP: async (userId, otp) => {
-        const otpDoc = await OtpModel.findOne({ userId });
+        const otpDoc = await OtpModel.findOne({
+            userId,
+            purpose: OTP_VERIFICATION,
+        });
         if (!otpDoc) {
             throw new Error("OTP expired or not found. Please request a new one.");
         }
         if (otpDoc.expiresAt < new Date()) {
-            await OtpModel.deleteOne({ userId });
+            await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
             throw new Error("OTP has expired. Please request a new one.");
         }
         if (otpDoc.otp !== otp) {
@@ -46,7 +51,7 @@ export const AuthService = {
         if (!user)
             throw new Error("User not found");
         // delete OTP after successful verification
-        await OtpModel.deleteOne({ userId });
+        await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
         return {
             id: user._id,
             email: user.email,
@@ -62,11 +67,12 @@ export const AuthService = {
         if (user.isVerified)
             throw new Error("Account already verified");
         // delete old OTP if exists
-        await OtpModel.deleteOne({ userId });
+        await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
         const otp = generateOTP();
         await OtpModel.create({
             userId,
             otp,
+            purpose: OTP_VERIFICATION,
             expiresAt: new Date(Date.now() + 10 * 60 * 1000),
         });
         await sendOTPEmail(user.email, otp);
@@ -82,11 +88,15 @@ export const AuthService = {
             throw new Error("Invalid credentials");
         // NEW: block unverified — send fresh OTP
         if (!user.isVerified) {
-            await OtpModel.deleteOne({ userId: user._id });
+            await OtpModel.deleteOne({
+                userId: user._id,
+                purpose: OTP_VERIFICATION,
+            });
             const otp = generateOTP();
             await OtpModel.create({
                 userId: user._id,
                 otp,
+                purpose: OTP_VERIFICATION,
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000),
             });
             await sendOTPEmail(user.email, otp);

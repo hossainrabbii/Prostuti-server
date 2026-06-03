@@ -3,6 +3,9 @@ import { UserModel } from "./user.model.js";
 import { OtpModel } from "../Otp/otp.model.js";
 import { ILoginPayload } from "./user.interface.js";
 import { generateOTP, sendOTPEmail } from "../../utils/otp.js";
+import type { OtpPurpose } from "../Otp/otp.interface.js";
+
+const OTP_VERIFICATION: OtpPurpose = "verification";
 
 export const AuthService = {
   // EDITED: register creates user + sends OTP, no tokens yet
@@ -23,6 +26,7 @@ export const AuthService = {
     await OtpModel.create({
       userId: user._id,
       otp,
+      purpose: OTP_VERIFICATION,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
     });
 
@@ -37,14 +41,17 @@ export const AuthService = {
 
   // NEW: verify OTP
   verifyOTP: async (userId: string, otp: string) => {
-    const otpDoc = await OtpModel.findOne({ userId });
+    const otpDoc = await OtpModel.findOne({
+      userId,
+      purpose: OTP_VERIFICATION,
+    });
 
     if (!otpDoc) {
       throw new Error("OTP expired or not found. Please request a new one.");
     }
 
     if (otpDoc.expiresAt < new Date()) {
-      await OtpModel.deleteOne({ userId });
+      await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
       throw new Error("OTP has expired. Please request a new one.");
     }
 
@@ -62,7 +69,7 @@ export const AuthService = {
     if (!user) throw new Error("User not found");
 
     // delete OTP after successful verification
-    await OtpModel.deleteOne({ userId });
+    await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
 
     return {
       id: user._id as string,
@@ -79,12 +86,13 @@ export const AuthService = {
     if (user.isVerified) throw new Error("Account already verified");
 
     // delete old OTP if exists
-    await OtpModel.deleteOne({ userId });
+    await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
 
     const otp = generateOTP();
     await OtpModel.create({
       userId,
       otp,
+      purpose: OTP_VERIFICATION,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
@@ -103,11 +111,15 @@ export const AuthService = {
 
     // NEW: block unverified — send fresh OTP
     if (!user.isVerified) {
-      await OtpModel.deleteOne({ userId: user._id });
+      await OtpModel.deleteOne({
+        userId: user._id,
+        purpose: OTP_VERIFICATION,
+      });
       const otp = generateOTP();
       await OtpModel.create({
         userId: user._id,
         otp,
+        purpose: OTP_VERIFICATION,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       });
       await sendOTPEmail(user.email, otp);
