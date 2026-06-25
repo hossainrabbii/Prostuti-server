@@ -1,5 +1,5 @@
 {
-  "name": "mailforge",
+  "name": "shamimvai-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -15,7 +15,6 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/nodemailer": "^7.0.11",
     "bcrypt": "^6.0.0",
@@ -27,11 +26,13 @@
     "express": "^5.2.1",
     "http-status": "^2.1.0",
     "jsonwebtoken": "^9.0.3",
+    "jwtoken": "^0.0.0",
     "mongoose": "^9.1.6",
     "nodemailer": "^8.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

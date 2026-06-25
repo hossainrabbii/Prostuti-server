@@ -1,165 +1,83 @@
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
+import { IUser } from "./user.interface.js";
 import { UserModel } from "./user.model.js";
-import { OtpModel } from "../Otp/otp.model.js";
-import { ILoginPayload } from "./user.interface.js";
-import { generateOTP, sendOTPEmail } from "../../utils/otp.js";
-import type { OtpPurpose } from "../Otp/otp.interface.js";
+import jwt from "jsonwebtoken";
 
-const OTP_VERIFICATION: OtpPurpose = "verification";
+const registerUser = async (data: IUser) => {
+  const isEmailExist = await UserModel.findOne({ email: data.email });
+  if (isEmailExist) {
+    throw new Error("এই ইমেইলটি দিয়ে ইতিমধ্যে অ্যাকাউন্ট তৈরি করা আছে!");
+  }
 
-export const AuthService = {
-  // EDITED: register creates user + sends OTP, no tokens yet
-  register: async (email: string, password: string) => {
-    const existing = await UserModel.findOne({ email });
-    if (existing) {
-      throw new Error("Email already registered");
-    }
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(data.password, salt);
 
-    const user = await UserModel.create({
-      email,
-      password,
-      isVerified: false,
-    });
+  const userData: Partial<IUser> = {
+    name: data.name,
+    email: data.email,
+    password: hashedPassword,
+    facebook: data.facebook || "",
+    role: data.role || "student",
+    isActive: true, 
+  };
 
-    // NEW: generate OTP and save to separate collection
-    const otp = generateOTP();
-    await OtpModel.create({
-      userId: user._id,
-      otp,
-      purpose: OTP_VERIFICATION,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
-    });
+  const newUser = await UserModel.create(userData);
+  const result = newUser.toObject();
 
-    // NEW: send OTP email
-    await sendOTPEmail(email, otp);
+  const jwtPayload = {
+    userId: result._id,
+    email: result.email,
+    role: result.role,
+  };
 
-    return {
-      userId: user._id,
-      email: user.email,
-    };
-  },
+  const accessToken = jwt.sign(
+    jwtPayload,
+    process.env.JWT_ACCESS_SECRET || "a052d8fb308450aef0d3d08cd0255ef7c2de5c93b47910e837f318cee74aa3856eac16b0812b30c0b5846a4d259d6b86530c66f1603ef80d13e87d2dbac87300", 
+    { expiresIn: "7d" } 
+  );
 
-  // NEW: verify OTP
-  verifyOTP: async (userId: string, otp: string) => {
-    const otpDoc = await OtpModel.findOne({
-      userId,
-      purpose: OTP_VERIFICATION,
-    });
+  const { password, ...userWithoutPassword } = result;
 
-    if (!otpDoc) {
-      throw new Error("OTP expired or not found. Please request a new one.");
-    }
+  return {
+    user: userWithoutPassword,
+    accessToken,
+  };
+};
 
-    if (otpDoc.expiresAt < new Date()) {
-      await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
-      throw new Error("OTP has expired. Please request a new one.");
-    }
+// login user
 
-    if (otpDoc.otp !== otp) {
-      throw new Error("Invalid OTP");
-    }
+const loginUser = async (payload: Pick<IUser, "email" | "password">) => {
+  const user = await UserModel.findOne({ email: payload.email }).select("+password");
+  if (!user) {
+    throw new Error("এই ইমেইল দিয়ে কোনো অ্যাকাউন্ট পাওয়া যায়নি!");
+  }
 
-    // mark verified
-    const user = await UserModel.findByIdAndUpdate(
-      userId,
-      { isVerified: true },
-      { new: true },
-    );
+  const isPasswordMatched = await bcrypt.compare(payload.password, user.password);
+  if (!isPasswordMatched) {
+    throw new Error("ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।");
+  }
 
-    if (!user) throw new Error("User not found");
+  const jwtPayload = {
+    userId: user._id,
+    email: user.email,
+    role: user.role,
+  };
 
-    // delete OTP after successful verification
-    await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
+  const accessToken = jwt.sign(
+    jwtPayload, 
+    process.env.JWT_ACCESS_SECRET || "a052d8fb308450aef0d3d08cd0255ef7c2de5c93b47910e837f318cee74aa3856eac16b0812b30c0b5846a4d259d6b86530c66f1603ef80d13e87d2dbac87300", 
+    { expiresIn: "7d" }
+  );
 
-    return {
-      id: user._id as string,
-      email: user.email,
-      role: user.role,
-      isVerified: true,
-    };
-  },
+  const userObj = user.toObject();
+  const { password, ...userWithoutPassword } = userObj;
+  return {
+    user: userWithoutPassword,
+    accessToken, 
+  };
+};
 
-  // NEW: resend OTP
-  resendOTP: async (userId: string) => {
-    const user = await UserModel.findById(userId);
-    if (!user) throw new Error("User not found");
-    if (user.isVerified) throw new Error("Account already verified");
 
-    // delete old OTP if exists
-    await OtpModel.deleteOne({ userId, purpose: OTP_VERIFICATION });
-
-    const otp = generateOTP();
-    await OtpModel.create({
-      userId,
-      otp,
-      purpose: OTP_VERIFICATION,
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    });
-
-    await sendOTPEmail(user.email, otp);
-
-    return { email: user.email };
-  },
-
-  // EDITED: login blocks unverified users
-  login: async ({ email, password }: ILoginPayload) => {
-    const user = await UserModel.findOne({ email }).select("+password");
-    if (!user) throw new Error("Invalid credentials");
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new Error("Invalid credentials");
-
-    // NEW: block unverified — send fresh OTP
-    if (!user.isVerified) {
-      await OtpModel.deleteOne({
-        userId: user._id,
-        purpose: OTP_VERIFICATION,
-      });
-      const otp = generateOTP();
-      await OtpModel.create({
-        userId: user._id,
-        otp,
-        purpose: OTP_VERIFICATION,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      });
-      await sendOTPEmail(user.email, otp);
-
-      // throw special error with userId so controller can return it
-      const error: any = new Error(
-        "Please verify your email first. A new OTP has been sent.",
-      );
-      error.requiresVerification = true;
-      error.userId = user._id;
-      throw error;
-    }
-
-    return {
-      id: user._id as string,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-    };
-  },
-
-  getById: async (id: string) => {
-    const user = await UserModel.findById(id);
-    if (!user) throw new Error("User not found");
-    return {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-    };
-  },
-
-  getRefreshUser: async (id: string) => {
-    const user = await UserModel.findById(id);
-    if (!user) throw new Error("User no longer exists");
-    return {
-      id: user._id as string,
-      email: user.email,
-      role: user.role,
-      isVerified: user.isVerified,
-    };
-  },
+export const userServices = {
+  registerUser,loginUser
 };

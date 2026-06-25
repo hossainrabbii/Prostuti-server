@@ -3,6 +3,12 @@ import { IUser } from "./user.interface.js";
 
 const userSchema = new Schema<IUser>(
   {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
     email: {
       type: String,
       required: true,
@@ -15,20 +21,24 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false,
     },
+    facebook: {
+      type: String,
+      lowercase: true,
+    },
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user",
+      enum: ["student", "admin"],
+      default: "student",
     },
-    // NEW
-    isVerified: {
+    
+    isActive: {
       type: Boolean,
       default: false,
     },    
     appPassword: {
       type: String,
       default: null,
-      // select: false, // never returned in queries
+      
     },
   },
   { timestamps: true },
