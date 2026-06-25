@@ -8,7 +8,7 @@ const registerUser = async (req: Request, res: Response) => {
     return res.status(201).json({
       success: true,
       statusCode: 201,
-      message: "ইউজার রেজিস্ট্রেশন সফল হয়েছে!",
+      message: "রেজিস্ট্রেশন সফল হয়েছে, লগইন করে ডেসবোর্ডে প্রবেশ করুন!",
       data: result, 
     });
     
