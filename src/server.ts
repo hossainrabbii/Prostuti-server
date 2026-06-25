@@ -1,7 +1,6 @@
 import app from "./app.js";
 import appConfig from "./app/appConfig/index.js";
 import mongoose from "mongoose";
-import { LeadModel } from "./app/module/Lead/lead.model.js";
 
 // let server: Server;
 const PORT = appConfig.port || 5000;
