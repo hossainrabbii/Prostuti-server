@@ -5,7 +5,7 @@ import routes from "./app/routes/routes.js";
 import { globalErrorHandler } from "./app/utils/errorHandler.js";
 const app = express();
 const corsOptions = {
-    origin: ["http://localhost:3000"],
+    origin: ["https://shamimvai.vercel.app", "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
