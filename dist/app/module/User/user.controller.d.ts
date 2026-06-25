@@ -1,14 +1,6 @@
-import { Request, Response, NextFunction } from "express";
-export declare const register: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const verifyOTP: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const resendOTP: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const forgotPassword: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const resetPassword: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const resendResetOTP: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const login: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const refresh: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const logout: (req: Request, res: Response) => void;
-export declare const getMe: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const saveMailConfig: (req: Request, res: Response, next: NextFunction) => Promise<Response<any, Record<string, any>> | undefined>;
-export declare const getMailConfig: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+import { Request, Response } from "express";
+export declare const userControllers: {
+    registerUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+    loginUser: (req: Request, res: Response) => Promise<Response<any, Record<string, any>>>;
+};
 //# sourceMappingURL=user.controller.d.ts.map

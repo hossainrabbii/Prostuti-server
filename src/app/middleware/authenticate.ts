@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { ITokenPayload } from "../module/User/user.interface.js";
 import appConfig from "../appConfig/index.js";
 
 const ACCESS_SECRET = appConfig.accessTokenSecret as string;
@@ -19,8 +18,6 @@ export const authenticate = (
   next: NextFunction,
 ) => {
   const token = req.cookies?.accessToken;
-  // if (token) console.log(token);
-  // console.log(req.cookies);
   if (!token) {
     return res.status(401).json({
       success: false,

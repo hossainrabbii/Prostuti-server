@@ -1,35 +1,34 @@
-import { ILoginPayload } from "./user.interface.js";
-export declare const AuthService: {
-    register: (email: string, password: string) => Promise<{
-        userId: string;
-        email: string;
+import { IUser } from "./user.interface.js";
+export declare const userServices: {
+    registerUser: (data: IUser) => Promise<{
+        user: {
+            _id: string;
+            email: string;
+            facebook?: string;
+            name: string;
+            role: "student" | "admin";
+            isActive: boolean;
+            appPassword?: string;
+            createdAt?: Date;
+            updatedAt?: Date;
+            __v: number;
+        };
+        accessToken: string;
     }>;
-    verifyOTP: (userId: string, otp: string) => Promise<{
-        id: string;
-        email: string;
-        role: "user" | "admin";
-        isVerified: boolean;
-    }>;
-    resendOTP: (userId: string) => Promise<{
-        email: string;
-    }>;
-    login: ({ email, password }: ILoginPayload) => Promise<{
-        id: string;
-        email: string;
-        role: "user" | "admin";
-        isVerified: true;
-    }>;
-    getById: (id: string) => Promise<{
-        id: string;
-        email: string;
-        role: "user" | "admin";
-        isVerified: boolean;
-    }>;
-    getRefreshUser: (id: string) => Promise<{
-        id: string;
-        email: string;
-        role: "user" | "admin";
-        isVerified: boolean;
+    loginUser: (payload: Pick<IUser, "email" | "password">) => Promise<{
+        user: {
+            _id: string;
+            email: string;
+            facebook?: string;
+            name: string;
+            role: "student" | "admin";
+            isActive: boolean;
+            appPassword?: string;
+            createdAt?: Date;
+            updatedAt?: Date;
+            __v: number;
+        };
+        accessToken: string;
     }>;
 };
 //# sourceMappingURL=user.service.d.ts.map
