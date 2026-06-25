@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import appConfig from "../appConfig/index.js";
+export interface ITokenPayload {
+  id: string;
+  email: string;
+  role: "user" | "admin";
+  // isVerified: boolean; // NEW
+}
 
 const ACCESS_SECRET = appConfig.accessTokenSecret as string;
 
@@ -18,6 +24,8 @@ export const authenticate = (
   next: NextFunction,
 ) => {
   const token = req.cookies?.accessToken;
+  // if (token) console.log(token);
+  // console.log(req.cookies);
   if (!token) {
     return res.status(401).json({
       success: false,

@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { ITokenPayload } from "../module/User/user.interface.js";
+export interface ITokenPayload {
+    id: string;
+    email: string;
+    role: "user" | "admin";
+}
 declare global {
     namespace Express {
         interface Request {
