@@ -7,7 +7,8 @@ import { globalErrorHandler } from "./app/utils/errorHandler.js";
 const app: Application = express();
 
 const corsOptions = {
-  origin: ["http://localhost:3000"],
+  // ⚠️ লোকালহোস্টের পাশাপাশি আপনার Vercel ফ্রন্টএন্ডের লাইভ লিংকটি এখানে অবশ্যই যুক্ত করবেন
+  origin: ["http://localhost:3000", "https://prostuti-client.vercel.app"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -22,11 +23,15 @@ app.use(cors(corsOptions));
 app.use("/api/v1", routes);
 app.get("/", (req: Request, res: Response) => {
   res.send("ShamimVai connect server side is running.");
- 
 });
 
 app.use(globalErrorHandler);
 
-
-
 export default app;
+
+// 🛠️ Vercel-এর 500/404 "No exports found" এরর ফিক্স করার জন্য এই অংশটি যোগ করা হলো
+// @ts-ignore
+if (typeof module !== "undefined" && module.exports) {
+  // @ts-ignore
+  module.exports = app;
+}
